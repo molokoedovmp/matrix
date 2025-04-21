@@ -25,7 +25,7 @@ export const sendOrderNotification = async (data: EmailData): Promise<void> => {
     `).join('');
 
     // Отправляем запрос на API-эндпоинт
-    const response = await fetch('/api/send-email.mjs', {
+    const response = await fetch('/api/send-email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
