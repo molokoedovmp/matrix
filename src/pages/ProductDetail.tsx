@@ -12,23 +12,60 @@ const ProductDetail = () => {
   const { data: product, isLoading, error } = useProduct(slug || '');
   const { addToCart } = useCart();
   const [selectedMemory, setSelectedMemory] = useState<string>('');
+  const [selectedPrice, setSelectedPrice] = useState<number>(0);
   const [mainImage, setMainImage] = useState<string>('');
   const [pageLoading, setPageLoading] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
   const navigate = useNavigate();
   
-  // Опции памяти для выбора
-  const memoryOptions = ['64GB', '128GB', '256GB', '512GB'];
-  
+  // Добавьте больше логов для отладки
   useEffect(() => {
-    // Имитация загрузки страницы
-    const timer = setTimeout(() => {
+    console.log("Текущее состояние ProductDetail:");
+    console.log("- slug:", slug);
+    console.log("- product:", product);
+    console.log("- isLoading:", isLoading);
+    console.log("- error:", error);
+    console.log("- pageLoading:", pageLoading);
+  }, [slug, product, isLoading, error, pageLoading]);
+  
+  // Отключите имитацию загрузки - она может вызывать проблемы
+  useEffect(() => {
+    if (!isLoading) {
       setPageLoading(false);
       setIsLoaded(true);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
+    }
+  }, [isLoading]);
+  
+  // Эффект для установки выбранной памяти и цены при загрузке продукта
+  useEffect(() => {
+    if (product) {
+      console.log("Загружен продукт:", product);
+      
+      // Безопасная обработка вариантов памяти
+      if (product.memory_options && Array.isArray(product.memory_options) && product.memory_options.length > 0) {
+        try {
+          // Проверяем, что варианты памяти имеют правильный формат
+          const firstOption = product.memory_options[0];
+          // Устанавливаем память и цену из первого варианта
+          console.log('Установка начального варианта памяти:', firstOption);
+          setSelectedMemory(firstOption.memory || '');
+          if (firstOption.price) {
+            console.log('Установка начальной цены:', firstOption.price);
+            setSelectedPrice(firstOption.price);
+          } else {
+            console.log('Вариант памяти без цены, используем базовую:', product.price);
+            setSelectedPrice(product.price);
+          }
+        } catch (e) {
+          console.error("Ошибка при обработке вариантов памяти:", e);
+          setSelectedPrice(product.price);
+        }
+      } else {
+        console.log('Нет вариантов памяти, используем базовую цену:', product.price);
+        setSelectedPrice(product.price);
+      }
+    }
+  }, [product]);
   
   useEffect(() => {
     if (product?.image_url) {
@@ -42,19 +79,70 @@ const ProductDetail = () => {
     console.log('Ошибка загрузки:', error);
   }, [slug, product, error]);
   
+  // Добавьте дополнительные логи для отладки memory_options
+  useEffect(() => {
+    if (product) {
+      console.log("Детальная информация о memory_options:");
+      console.log("- Тип:", typeof product.memory_options);
+      console.log("- Значение:", product.memory_options);
+      if (product.memory_options) {
+        console.log("- Длина массива:", Array.isArray(product.memory_options) ? product.memory_options.length : "не массив");
+      }
+    }
+  }, [product]);
+  
+  // Улучшенная функция для обработки выбора памяти
+  const handleMemorySelect = (memory: string) => {
+    console.log('Выбран объем памяти:', memory);
+    setSelectedMemory(memory);
+    
+    // Находим соответствующую цену
+    if (product?.memory_options && Array.isArray(product.memory_options)) {
+      const option = product.memory_options.find(opt => opt.memory === memory);
+      if (option) {
+        console.log('Найден вариант с ценой:', option.price);
+        setSelectedPrice(option.price);
+      } else {
+        console.log('Вариант не найден, используем базовую цену:', product.price);
+        setSelectedPrice(product.price);
+      }
+    }
+  };
+  
+  // Функция для расчета цены со скидкой
+  const calculateDiscountPrice = (price: number): number | null => {
+    // Если есть фиксированная цена со скидкой, используем её
+    if (product?.discount_price && product.discount_price > 0) {
+      return product.discount_price;
+    }
+    
+    // Иначе, если есть процент скидки, рассчитываем
+    if (product?.discount_percent && product.discount_percent > 0) {
+      const discountAmount = price * (product.discount_percent / 100);
+      return Math.round(price - discountAmount);
+    }
+    
+    return null;
+  };
+  
+  // Получаем цену со скидкой для выбранной памяти
+  const discountPrice = calculateDiscountPrice(selectedPrice);
+
   const handleAddToCart = () => {
     if (!product) return;
     
     const productToAdd = {
       ...product,
-      memory: selectedMemory || memoryOptions[0]
+      memory: selectedMemory,
+      price: selectedPrice,
+      discount_price: discountPrice
     };
     
     addToCart(productToAdd);
     
-    toast({
-      title: "Товар добавлен в корзину",
-      description: `${product.name} (${selectedMemory || memoryOptions[0]}) добавлен в корзину`,
+      toast({
+        title: "Товар добавлен в корзину",
+      description: `${product.name} (${selectedMemory}) добавлен в корзину`,
     });
   };
   
@@ -102,7 +190,7 @@ const ProductDetail = () => {
       </div>
     );
   }
-  
+
   if (!product) {
     return (
       <div className="min-h-screen bg-black flex flex-col">
@@ -123,7 +211,7 @@ const ProductDetail = () => {
   
   // Получаем дополнительные изображения, исключая главное
   const additionalImages = product.additional_images?.filter(img => img !== product.image_url) || [];
-  
+
   return (
     <div className="min-h-screen bg-black flex flex-col">
       <Navbar />
@@ -162,10 +250,10 @@ const ProductDetail = () => {
               <span className="text-gray-400">• {product.year} • {product.color}</span>
             )}
           </div>
-        </div>
-        
+          </div>
+          
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          {/* Галерея изображений */}
+            {/* Галерея изображений */}
           <div className="space-y-4">
             <div className="aspect-square bg-black/30 rounded-lg overflow-hidden">
               <img 
@@ -190,7 +278,7 @@ const ProductDetail = () => {
               
               {additionalImages.map((image, index) => (
                 <div 
-                  key={index}
+                    key={index}
                   className={`aspect-square bg-black/30 rounded-lg overflow-hidden cursor-pointer border-2 ${mainImage === image ? 'border-matrix-green' : 'border-transparent'}`}
                   onClick={() => handleImageChange(image)}
                 >
@@ -200,12 +288,12 @@ const ProductDetail = () => {
                     className="w-full h-full object-contain p-2"
                   />
                 </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-          
+            
           {/* Информация о продукте */}
-          <div>
+            <div>
             {/* Заголовок продукта для десктопа */}
             <div className="hidden md:block">
               <h1 className="text-3xl font-bold text-white mb-2">{product.name}</h1>
@@ -217,56 +305,69 @@ const ProductDetail = () => {
               </div>
             </div>
             
+            {/* Блок с ценой */}
             <div className="mb-6">
               <div className="text-3xl font-bold text-white mb-2">
-                {product.price?.toLocaleString('ru-RU')} ₽
-                
-                {product.discount_price && (
-                  <span className="text-lg text-gray-400 line-through ml-2">
-                    {product.discount_price.toLocaleString('ru-RU')} ₽
-                  </span>
+                {discountPrice ? (
+                  <>
+                    {discountPrice.toLocaleString('ru-RU')} ₽
+                    <span className="text-lg text-gray-400 line-through ml-2">
+                      {selectedPrice.toLocaleString('ru-RU')} ₽
+                    </span>
+                  </>
+                ) : (
+                  <>{selectedPrice.toLocaleString('ru-RU')} ₽</>
                 )}
               </div>
               
+              {/* Отображение процента скидки, если он есть */}
+              {product?.discount_percent > 0 && (
+                <div className="inline-block bg-matrix-green/20 text-matrix-green px-2 py-1 rounded text-sm mb-2">
+                  Скидка {product.discount_percent}%
+                </div>
+              )}
+              
               <div className="flex items-center">
-                {product.in_stock ? (
+                {product?.in_stock ? (
                   <span className="text-green-500 flex items-center">
                     <Check size={16} className="mr-1" /> В наличии
-                  </span>
+                        </span>
                 ) : (
                   <span className="text-orange-400">Под заказ</span>
-                )}
+                      )}
               </div>
-            </div>
-            
+              </div>
+              
             {/* Выбор объема памяти */}
-            <div className="mb-6">
-              <h3 className="text-white font-medium mb-2">Объем памяти:</h3>
-              <div className="grid grid-cols-4 gap-2">
-                {memoryOptions.map(memory => (
-                  <button
-                    key={memory}
-                    onClick={() => setSelectedMemory(memory)}
-                    className={`px-4 py-2 border ${
-                      selectedMemory === memory 
-                        ? 'border-matrix-green text-matrix-green' 
-                        : 'border-gray-700 text-gray-400 hover:border-gray-500'
-                    } rounded-md transition-colors`}
-                  >
-                    {memory}
-                  </button>
-                ))}
+            {product?.memory_options && Array.isArray(product.memory_options) && product.memory_options.length > 0 ? (
+              <div className="mb-6">
+                <h3 className="text-white font-medium mb-2">Объем памяти:</h3>
+                <div className="grid grid-cols-4 gap-2">
+                  {product.memory_options.map((option, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleMemorySelect(option.memory)}
+                      className={`px-4 py-2 border ${
+                        selectedMemory === option.memory 
+                          ? 'border-matrix-green text-matrix-green' 
+                          : 'border-gray-700 text-gray-400 hover:border-gray-500'
+                      } rounded-md transition-colors`}
+                    >
+                      {option.memory}{!option.memory.toLowerCase().includes('gb') ? 'GB' : ''}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-            
+            ) : null}
+              
             {/* Кнопка добавления в корзину */}
-            <button
-              onClick={handleAddToCart}
+                <button 
+                  onClick={handleAddToCart}
               className="w-full bg-matrix-green text-black py-3 rounded-md flex items-center justify-center font-medium hover:bg-matrix-green/90 transition-colors mb-6"
-            >
+                >
               <ShoppingCart size={20} className="mr-2" />
-              Добавить в корзину
-            </button>
+                  Добавить в корзину
+                </button>
             
             {/* Технические характеристики */}
             <div className="bg-black/30 rounded-lg p-4">
@@ -278,16 +379,16 @@ const ProductDetail = () => {
                     <div key={key} className="flex justify-between border-b border-gray-800 pb-2">
                       <span className="text-gray-400">{key}</span>
                       <span className="text-white">{value}</span>
-                    </div>
+              </div>
                   ))
                 ) : (
                   <p className="text-gray-400">Технические характеристики не указаны</p>
                 )}
               </div>
+              </div>
             </div>
           </div>
-        </div>
-        
+          
         {/* Описание продукта */}
         <div className="bg-black/30 rounded-lg p-6 mb-12">
           <h2 className="text-2xl font-bold text-white mb-4">Описание</h2>

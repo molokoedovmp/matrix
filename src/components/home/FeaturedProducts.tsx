@@ -1,16 +1,38 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Loader2 } from 'lucide-react';
-import { useFeaturedProducts } from '../../hooks/useFeaturedProducts';
-import { Product } from '../../services/productService';
+import { productService, Product } from '../../services/productService';
 
 const FeaturedProducts = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const { data: products, isLoading, error } = useFeaturedProducts();
 
-  // Функция для форматирования цены
-  const formatPrice = (price: number) => {
-    return price.toLocaleString('ru-RU') + ' ₽';
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        setIsLoading(true);
+        const data = await productService.getFeaturedProducts();
+        setProducts(data);
+      } catch (error) {
+        console.error('Ошибка при загрузке рекомендуемых товаров:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchFeaturedProducts();
+  }, []);
+
+  // Функция для расчета цены со скидкой
+  const calculateDiscountPrice = (product: Product): number | null => {
+    // Используем только процент скидки для расчета
+    if (product.discount_percent && product.discount_percent > 0) {
+      const discountAmount = product.price * (product.discount_percent / 100);
+      return Math.round(product.price - discountAmount);
+    }
+    
+    return null;
   };
 
   return (
@@ -24,10 +46,6 @@ const FeaturedProducts = () => {
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-12 h-12 text-matrix-green animate-spin" />
-          </div>
-        ) : error ? (
-          <div className="bg-red-900/30 border border-red-800 text-red-300 px-4 py-3 rounded">
-            Ошибка при загрузке продуктов
           </div>
         ) : products && products.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -43,11 +61,12 @@ const FeaturedProducts = () => {
                     alt={product.name} 
                     className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent transition-opacity duration-300"></div>
                   
-                  {product.discount_price && (
-                    <div className="absolute top-2 right-2 bg-matrix-green text-black text-xs font-bold px-2 py-1 rounded">
-                      Скидка {Math.round((1 - product.discount_price / product.price) * 100)}%
+                  {/* Если есть отображение процента скидки, заменяем его так: */}
+                  {product.discount_percent > 0 && (
+                    <div className="absolute top-2 right-2 bg-matrix-green/80 text-black text-xs px-2 py-0.5 rounded">
+                      -{product.discount_percent}%
                     </div>
                   )}
                 </div>
@@ -59,16 +78,25 @@ const FeaturedProducts = () => {
                   
                   <div className="flex justify-between items-center">
                     <div>
-                      {product.discount_price ? (
-                        <div className="flex flex-col">
-                          <span className="text-white font-semibold">{formatPrice(product.discount_price)}</span>
-                          <span className="text-gray-400 text-sm line-through">{formatPrice(product.price)}</span>
-                        </div>
-                      ) : (
-                        <span className="text-white font-semibold">{formatPrice(product.price)}</span>
-                      )}
+                      {/* Цена товара */}
+                      <div className="mt-2">
+                        {calculateDiscountPrice(product) ? (
+                          <div className="flex items-center">
+                            <span className="text-white font-bold">
+                              {calculateDiscountPrice(product).toLocaleString('ru-RU')} ₽
+                            </span>
+                            <span className="text-sm text-gray-400 line-through ml-2">
+                              {product.price.toLocaleString('ru-RU')} ₽
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-white font-bold">
+                            {product.price.toLocaleString('ru-RU')} ₽
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <button className="text-matrix-green flex items-center text-sm group-hover:underline transition-all duration-300">
+                    <button className="text-matrix-green flex items-center text-sm transition-all duration-300 hover:underline bg-black/30 px-3 py-1.5 rounded-md border border-matrix-green/20 hover:border-matrix-green/40">
                       Подробнее <ArrowRight size={16} className="ml-1" />
                     </button>
                   </div>

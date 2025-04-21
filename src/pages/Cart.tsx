@@ -150,9 +150,22 @@ const Cart = () => {
                           </div>
                           
                           <div className="flex items-center space-x-4">
-                            <span className="text-white font-medium">
-                              {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
-                            </span>
+                            <div className="flex flex-col">
+                              {item.discount_price ? (
+                                <>
+                                  <span className="text-white font-bold">
+                                    {item.discount_price.toLocaleString('ru-RU')} ₽
+                                  </span>
+                                  <span className="text-sm text-gray-400 line-through">
+                                    {item.price.toLocaleString('ru-RU')} ₽
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-white font-bold">
+                                  {item.price.toLocaleString('ru-RU')} ₽
+                                </span>
+                              )}
+                            </div>
                             
                             <button 
                               onClick={() => handleRemoveItem(item.id)}
@@ -243,7 +256,26 @@ const Cart = () => {
                   <div className="border-t border-gray-800 pt-4 mb-6">
                     <div className="flex justify-between mb-2">
                       <span className="text-gray-400">Товары ({items.length}):</span>
-                      <span className="text-white">{getTotalPrice().toLocaleString('ru-RU')} ₽</span>
+                      <div className="text-right">
+                        {items.map((item) => (
+                          <>
+                            {item.discount_price ? (
+                              <>
+                                <div className="text-white font-bold">
+                                  {(item.discount_price * item.quantity).toLocaleString('ru-RU')} ₽
+                                </div>
+                                <div className="text-sm text-gray-400 line-through">
+                                  {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-white font-bold">
+                                {(item.price * item.quantity).toLocaleString('ru-RU')} ₽
+                              </div>
+                            )}
+                          </>
+                        ))}
+                      </div>
                     </div>
                     
                     <div className="flex justify-between mb-2">

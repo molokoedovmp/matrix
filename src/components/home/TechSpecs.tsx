@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Cpu, Battery, Monitor, Camera, Wifi, Clock } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -12,39 +11,49 @@ interface Product {
   battery: string;
   connectivity: string;
   performance: number;
+  image: string;
 }
 
 const products: Record<string, Product> = {
-  'iphone': {
-    id: 'iphone-14-pro',
-    name: 'iPhone 14 Pro',
-    processor: 'A16 Bionic с 6-ядерным CPU и 5-ядерным GPU',
-    display: 'Super Retina XDR 6,1" с технологией ProMotion и частотой до 120 Гц',
-    camera: '48 Мп (основная), 12 Мп (сверхширокоугольная), 12 Мп (телефото)',
-    battery: 'До 23 часов воспроизведения видео',
-    connectivity: 'Wi-Fi 6E, Bluetooth 5.3, 5G, UWB, NFC',
-    performance: 95
+  iphone: {
+    id: 'iphone-16-pro',
+    name: 'iPhone 16 Pro',
+    processor: 'A18 Pro с 6‑ядерным CPU и 6‑ядерным GPU',
+    display: '6,3″ Super Retina XDR OLED, 2622×1206 пикселей, 460 ppi, ProMotion до 120 Гц, Always-On, HDR, True Tone',
+    camera: '48 Мп (широкоугольная), 48 Мп (ультраширокая), 12 Мп (телеобъектив с 5‑кратным оптическим зумом)',
+    battery: '3582 мА·ч; до 27 часов воспроизведения видео',
+    connectivity: 'Wi‑Fi 6E, Bluetooth 5.3, 5G, UWB, NFC',
+    performance: 98,
+    image: '/iphone.jpg'
   },
-  'mac': {
-    id: 'macbook-pro',
-    name: 'MacBook Pro 14"',
-    processor: 'M2 Pro до 12-ядерного CPU и 19-ядерного GPU',
-    display: 'Liquid Retina XDR 14,2", 3024 x 1964, XDR, ProMotion',
-    camera: 'FaceTime HD 1080p',
-    battery: 'До 18 часов работы от одного заряда',
-    connectivity: 'Wi-Fi 6E, Bluetooth 5.3, Thunderbolt 4',
-    performance: 98
+  mac: {
+    id: 'macbook-pro-m4',
+    name: 'MacBook Pro 14″ (M4)',
+    processor: 'M4 с 10‑ядерным CPU (4 производительных и 6 энергоэффективных ядер), 10‑ядерным GPU и 16‑ядерным Neural Engine',
+    display: '14,2″ Liquid Retina XDR, 3024×1964 пикселей, Mini‑LED, ProMotion до 120 Гц',
+    camera: '12 Мп FaceTime HD с функцией Center Stage',
+    battery: 'До 21 часа работы от одного заряда',
+    connectivity: 'Wi‑Fi 6E, Bluetooth 5.3, 3× Thunderbolt 4, HDMI, SDXC, MagSafe 3',
+    performance: 95,
+    image: '/mac.jpg'
   },
-  'ipad': {
-    id: 'ipad-pro',
-    name: 'iPad Pro',
-    processor: 'M2 с 8-ядерным CPU и 10-ядерным GPU',
-    display: 'Liquid Retina XDR 11" или 12,9", ProMotion, True Tone',
-    camera: '12 Мп (широкоугольная), 10 Мп (сверхширокоугольная), LiDAR',
-    battery: 'До 10 часов работы в интернете по Wi-Fi',
-    connectivity: 'Wi-Fi 6E, Bluetooth 5.3, 5G (опционально)',
-    performance: 90
+  ipad: {
+    id: 'ipad-pro-13-m4',
+    name: 'iPad Pro 13″ (M4)',
+    processor: 'M4 с 10‑ядерным CPU (4 производительных и 6 энергоэффективных ядер), 10‑ядерным GPU и 16‑ядерным Neural Engine',
+    display: '13″ Ultra Retina XDR, Tandem OLED, 2752×2064 пикселей, ProMotion 10–120 Гц, HDR до 1600 нит',
+    camera: '12 Мп (основная) с LiDAR, 12 Мп (фронтальная, ультраширокая) с функцией Center Stage',
+    battery: '38,99 Вт·ч; до 10 часов работы в интернете по Wi‑Fi',
+    connectivity: 'Wi‑Fi 6E, Bluetooth 5.3, 5G (опционально), Thunderbolt / USB 4',
+    performance: 92,
+    image: '/ipad.jpg'
   }
+};
+
+const productImages = {
+  iphone: '/images/products/iphone.jpg',
+  mac: '/images/products/macbook.jpg',
+  ipad: '/images/products/ipad.jpg'
 };
 
 const TechSpecs = () => {
@@ -106,14 +115,26 @@ const TechSpecs = () => {
           </p>
           
           <div className="flex justify-center mb-10">
-            <ToggleGroup type="single" value={selectedProduct} onValueChange={(value) => value && setSelectedProduct(value)}>
-              <ToggleGroupItem value="iphone" className="text-sm sm:text-base px-4 py-2 data-[state=on]:bg-matrix-green/20 data-[state=on]:text-matrix-green">
+            <ToggleGroup type="single" value={selectedProduct} onValueChange={(value) => value && setSelectedProduct(value)} className="border border-gray-800 rounded-md overflow-hidden">
+              <ToggleGroupItem 
+                value="iphone" 
+                className="text-sm sm:text-base px-4 py-2 bg-black/50 border-r border-gray-800 text-gray-300
+                          data-[state=on]:bg-matrix-green/20 data-[state=on]:text-matrix-green hover:bg-black/70"
+              >
                 iPhone
               </ToggleGroupItem>
-              <ToggleGroupItem value="mac" className="text-sm sm:text-base px-4 py-2 data-[state=on]:bg-matrix-green/20 data-[state=on]:text-matrix-green">
+              <ToggleGroupItem 
+                value="mac" 
+                className="text-sm sm:text-base px-4 py-2 bg-black/50 border-r border-gray-800 text-gray-300
+                          data-[state=on]:bg-matrix-green/20 data-[state=on]:text-matrix-green hover:bg-black/70"
+              >
                 MacBook
               </ToggleGroupItem>
-              <ToggleGroupItem value="ipad" className="text-sm sm:text-base px-4 py-2 data-[state=on]:bg-matrix-green/20 data-[state=on]:text-matrix-green">
+              <ToggleGroupItem 
+                value="ipad" 
+                className="text-sm sm:text-base px-4 py-2 bg-black/50 text-gray-300
+                          data-[state=on]:bg-matrix-green/20 data-[state=on]:text-matrix-green hover:bg-black/70"
+              >
                 iPad
               </ToggleGroupItem>
             </ToggleGroup>
@@ -154,7 +175,7 @@ const TechSpecs = () => {
             <div className={`text-center transition-all duration-500 delay-300 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}>
               <div className="relative">
                 <img 
-                  src={`/iphone.jpg`} 
+                  src={product.image} 
                   alt={product.name}
                   className="rounded-lg shadow-2xl mx-auto"
                 />

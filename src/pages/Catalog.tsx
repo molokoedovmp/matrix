@@ -39,6 +39,7 @@ interface Product {
   in_stock: boolean;
   tags?: string[];
   discount_price?: number;
+  discount_percent?: number;
   
   // Добавьте свойства для совместимости со старым кодом
   category?: string;
@@ -442,6 +443,17 @@ const Catalog = () => {
     testDb();
   }, []);
 
+  // Функция для расчета цены со скидкой
+  const calculateDiscountPrice = (product: Product): number | null => {
+    // Используем только процент скидки для расчета
+    if (product.discount_percent && product.discount_percent > 0) {
+      const discountAmount = product.price * (product.discount_percent / 100);
+      return Math.round(product.price - discountAmount);
+    }
+    
+    return null;
+  };
+
   // Добавляем эффект загрузки страницы
   if (pageLoading || isLoadingProducts || isLoadingCategories) {
     return (
@@ -797,16 +809,17 @@ const Catalog = () => {
                       <p className="text-sm text-matrix-green mb-1">{product.category_name}</p>
                       <h3 className="text-lg font-bold text-white mb-1 group-hover:text-matrix-green transition-colors duration-300">{product.name}</h3>
                       
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <span className="text-white font-semibold">{product.price.toLocaleString('ru-RU')} ₽</span>
-                          {product.discount_price && (
-                            <span className="text-gray-500 text-sm line-through ml-2">{product.discount_price.toLocaleString('ru-RU')} ₽</span>
-                          )}
-                        </div>
-                        
-                        {!product.in_stock && (
-                          <span className="text-xs text-orange-300">Под заказ</span>
+                      <div className="mt-2">
+                        {/* Рассчитываем цену со скидкой */}
+                        {calculateDiscountPrice(product) && (
+                          <div className="flex items-center">
+                            <span className="text-white font-bold">
+                              {calculateDiscountPrice(product).toLocaleString('ru-RU')} ₽
+                            </span>
+                            <span className="text-sm text-gray-400 line-through ml-2">
+                              {product.price.toLocaleString('ru-RU')} ₽
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -875,8 +888,9 @@ const Catalog = () => {
                           <div className="flex items-center justify-between mt-2">
                             <div className="flex items-center">
                               <span className="text-white text-xl md:text-2xl font-bold">{product.price.toLocaleString('ru-RU')} ₽</span>
-                              {product.discount_price && (
-                                <span className="text-gray-500 line-through ml-2">{product.discount_price.toLocaleString('ru-RU')} ₽</span>
+                              {/* Отображаем процент скидки */}
+                              {product.discount_percent && (
+                                <div className="discount-badge">-{product.discount_percent}%</div>
                               )}
                             </div>
                             

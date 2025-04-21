@@ -10,6 +10,7 @@ export interface CartItem {
   quantity: number;
   memory?: string;
   color?: string;
+  discount_price?: number;
 }
 
 interface CartStore {
@@ -29,17 +30,22 @@ export const useCartStore = create<CartStore>()(
       
       addToCart: (product) => {
         const { items } = get();
-        const existingItem = items.find(item => item.id === product.id);
         
-        if (existingItem) {
-          set({
-            items: items.map(item => 
-              item.id === product.id 
-                ? { ...item, quantity: item.quantity + 1 } 
-                : item
-            )
-          });
+        // Создаем уникальный ключ для товара, учитывая память
+        const productKey = `${product.id}-${product.memory || ''}`;
+        
+        // Ищем товар с таким же ID и памятью
+        const existingItemIndex = items.findIndex(item => 
+          `${item.id}-${item.memory || ''}` === productKey
+        );
+        
+        if (existingItemIndex >= 0) {
+          // Если товар с такой памятью уже есть, увеличиваем количество
+          const updatedItems = [...items];
+          updatedItems[existingItemIndex].quantity += 1;
+          set({ items: updatedItems });
         } else {
+          // Если товара с такой памятью нет, добавляем новый
           set({
             items: [...items, { 
               id: product.id,
@@ -48,7 +54,8 @@ export const useCartStore = create<CartStore>()(
               image_url: product.image_url,
               quantity: 1,
               memory: product.memory,
-              color: product.color
+              color: product.color,
+              discount_price: product.discount_price
             }]
           });
         }
@@ -79,7 +86,10 @@ export const useCartStore = create<CartStore>()(
       
       getTotalPrice: () => {
         const { items } = get();
-        return items.reduce((total, item) => total + (item.price * item.quantity), 0);
+        return items.reduce((total, item) => {
+          const priceToUse = item.discount_price || item.price;
+          return total + (priceToUse * item.quantity);
+        }, 0);
       }
     }),
     {

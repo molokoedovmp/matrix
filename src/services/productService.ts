@@ -33,6 +33,8 @@ export interface Product {
   additional_images?: string[];
   specifications?: Record<string, any>;
   categories?: { id: number; name: string }[];
+  memory_options?: Array<{memory: string, price: number}>;
+  discount_percent?: number;
 }
 
 // Обновите интерфейс для создания/обновления категории
@@ -66,6 +68,8 @@ export const productService = {
         rating_count,
         is_featured,
         discount_price,
+        discount_percent,
+        memory_options,
         additional_images,
         specifications
       `);
@@ -107,61 +111,105 @@ export const productService = {
   async getProductById(slug: string): Promise<Product | null> {
     console.log('Запрос продукта по slug:', slug);
     
-    const { data, error } = await supabase
-      .from('products')
-      .select(`
-        id,
-        slug,
-        name,
-        description,
-        price,
-        image_url,
-        category_id,
-        year,
-        color,
-        condition,
-        in_stock,
-        rating,
-        rating_count,
-        is_featured,
-        discount_price,
-        additional_images,
-        specifications
-      `)
-      .eq('slug', slug)
-      .single();
-    
-    if (error) {
-      console.error(`Error fetching product with slug ${slug}:`, error);
-      // Не выбрасываем ошибку, чтобы не прерывать выполнение
-      return null;
-    }
-    
-    if (!data) {
-      console.log(`Продукт с slug ${slug} не найден`);
-      return null;
-    }
-    
-    // Получаем категорию отдельно
-    if (data.category_id) {
-      const { data: categoryData } = await supabase
-        .from('categories')
-        .select('name')
-        .eq('id', data.category_id)
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          id,
+          slug,
+          name,
+          description,
+          price,
+          image_url,
+          category_id,
+          year,
+          color,
+          condition,
+          in_stock,
+          rating,
+          rating_count,
+          is_featured,
+          discount_price,
+          discount_percent,
+          memory_options,
+          additional_images,
+          specifications
+        `)
+        .eq('slug', slug)
         .single();
+      
+      console.log('Ответ от базы данных:', { data, error });
+      
+      if (error) {
+        console.error(`Error fetching product with slug ${slug}:`, error);
+        return null;
+      }
+      
+      if (!data) {
+        console.log(`Продукт с slug ${slug} не найден`);
+        return null;
+      }
+      
+      // Обработка и нормализация memory_options
+      if (data.memory_options) {
+        console.log('Исходные memory_options:', data.memory_options);
+        
+        // Обработка различных форматов memory_options
+        try {
+          let normalizedOptions;
+          
+          if (typeof data.memory_options === 'string') {
+            // Если пришла строка - пробуем распарсить JSON
+            normalizedOptions = JSON.parse(data.memory_options);
+          } else {
+            // Иначе используем как есть
+            normalizedOptions = data.memory_options;
+          }
+          
+          // Убедимся, что это массив
+          if (!Array.isArray(normalizedOptions)) {
+            if (typeof normalizedOptions === 'object') {
+              // Если это объект - преобразуем в массив
+              normalizedOptions = Object.values(normalizedOptions);
+            } else {
+              // Если ничего не подходит - создаем пустой массив
+              normalizedOptions = [];
+            }
+          }
+          
+          // Присваиваем нормализованные опции
+          data.memory_options = normalizedOptions;
+          console.log('Нормализованные memory_options:', data.memory_options);
+        } catch (e) {
+          console.error('Ошибка при обработке memory_options:', e);
+          data.memory_options = [];
+        }
+      }
+      
+      // Получаем категорию отдельно
+      if (data.category_id) {
+        const { data: categoryData } = await supabase
+          .from('categories')
+          .select('name')
+          .eq('id', data.category_id)
+          .single();
+        
+        return {
+          ...data,
+          category_name: categoryData?.name || '',
+          tags: []
+        };
+      }
       
       return {
         ...data,
-        category_name: categoryData?.name || '',
+        category_name: '',
         tags: []
       };
+    } catch (error) {
+      console.error(`Ошибка при получении продукта по slug ${slug}:`, error);
+      return null;
     }
-    
-    return {
-      ...data,
-      category_name: '',
-      tags: []
-    };
   },
   
   async getProductsByCategory(categorySlug: string): Promise<Product[]> {
@@ -358,64 +406,40 @@ export const productService = {
     return data;
   },
   
-  async createProduct(product: Partial<Product>): Promise<Product> {
+  async createProduct(productData: any): Promise<Product> {
+    // Преобразуем данные для сохранения
+    const { memory_options, discount_percent, ...rest } = productData;
+    
     const { data, error } = await supabase
       .from('products')
-      .insert([{
-        name: product.name,
-        slug: product.slug,
-        description: product.description || '',
-        price: product.price,
-        image_url: product.image_url,
-        category_id: product.category_id,
-        year: product.year,
-        color: product.color,
-        condition: product.condition,
-        in_stock: product.in_stock !== undefined ? product.in_stock : true,
-        is_featured: product.is_featured || false,
-        discount_price: product.discount_price,
-        additional_images: product.additional_images || [],
-        specifications: product.specifications || {}
-      }])
-      .select('*')
+      .insert({
+        ...rest,
+        memory_options: memory_options || [],
+        discount_percent: discount_percent || 0
+      })
+      .select()
       .single();
     
-    if (error) {
-      console.error('Error creating product:', error);
-      throw error;
-    }
-    
+    if (error) throw error;
     return data;
   },
   
-  async updateProduct(product: Partial<Product>): Promise<Product> {
+  async updateProduct(id: number, productData: any): Promise<Product> {
+    // Преобразуем данные для обновления
+    const { memory_options, discount_percent, ...rest } = productData;
+    
     const { data, error } = await supabase
       .from('products')
       .update({
-        name: product.name,
-        slug: product.slug,
-        description: product.description,
-        price: product.price,
-        image_url: product.image_url,
-        category_id: product.category_id,
-        year: product.year,
-        color: product.color,
-        condition: product.condition,
-        in_stock: product.in_stock,
-        is_featured: product.is_featured,
-        discount_price: product.discount_price,
-        additional_images: product.additional_images || [],
-        specifications: product.specifications || {}
+        ...rest,
+        memory_options: memory_options || [],
+        discount_percent: discount_percent || 0
       })
-      .eq('id', product.id)
-      .select('*')
+      .eq('id', id)
+      .select()
       .single();
     
-    if (error) {
-      console.error('Error updating product:', error);
-      throw error;
-    }
-    
+    if (error) throw error;
     return data;
   },
   
@@ -451,6 +475,7 @@ export const productService = {
         rating_count,
         is_featured,
         discount_price,
+        discount_percent,
         additional_images,
         specifications
       `)
