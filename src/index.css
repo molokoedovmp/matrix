@@ -1,0 +1,302 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+
+    --radius: 0.5rem;
+
+    --chart-1: 12 76% 61%;
+
+    --chart-2: 173 58% 39%;
+
+    --chart-3: 197 37% 24%;
+
+    --chart-4: 43 74% 66%;
+
+    --chart-5: 27 87% 67%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html, body {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-matrix-dark text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  @font-face {
+    font-family: 'SF Pro Display';
+    src: url('https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sanfranciscodisplay-regular-webfont.woff');
+    font-weight: 400;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'SF Pro Display';
+    src: url('https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sanfranciscodisplay-medium-webfont.woff');
+    font-weight: 500;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'SF Pro Display';
+    src: url('https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sanfranciscodisplay-bold-webfont.woff');
+    font-weight: 700;
+    font-style: normal;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer components {
+  .digital-char {
+    @apply font-mono text-xs sm:text-sm opacity-0;
+    animation: fadeIn 1.5s forwards;
+    animation-delay: calc(var(--delay) * 100ms);
+  }
+
+  .matrix-button {
+    @apply relative overflow-hidden bg-transparent text-matrix-green border border-matrix-green 
+           px-6 py-3 rounded-md transition-all duration-300 hover:bg-matrix-green/10
+           focus:outline-none focus:ring-2 focus:ring-matrix-green focus:ring-offset-2 focus:ring-offset-matrix-dark;
+  }
+
+  .matrix-button::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-matrix-green/0 via-matrix-green/20 to-matrix-green/0;
+    transform: translateX(-100%);
+    transition: transform 0.5s ease;
+  }
+
+  .matrix-button:hover::before {
+    transform: translateX(100%);
+  }
+
+  .apple-button {
+    @apply relative overflow-hidden bg-transparent text-apple-blue border border-apple-blue 
+           px-6 py-3 rounded-md transition-all duration-300 hover:bg-apple-blue/10
+           focus:outline-none focus:ring-2 focus:ring-apple-blue focus:ring-offset-2 focus:ring-offset-matrix-dark;
+  }
+
+  .apple-button::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-apple-blue/0 via-apple-blue/20 to-apple-blue/0;
+    transform: translateX(-100%);
+    transition: transform 0.5s ease;
+  }
+
+  .apple-button:hover::before {
+    transform: translateX(100%);
+  }
+
+  .product-card {
+    @apply bg-black/50 backdrop-blur-sm border border-white/10 rounded-lg p-4 
+           transition-all duration-300 hover:border-matrix-green/50 hover:shadow-lg 
+           hover:shadow-matrix-green/10;
+  }
+
+  .nav-item {
+    @apply relative text-gray-300 hover:text-white px-3 py-2 transition-colors duration-300;
+  }
+  
+  .nav-item::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-matrix-green transition-all duration-300;
+  }
+  
+  .nav-item:hover::after {
+    @apply w-full;
+  }
+
+  /* Новые анимированные компоненты */
+  .tech-border {
+    @apply relative border border-transparent overflow-hidden;
+  }
+
+  .tech-border::before {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.8), transparent);
+    width: 150%;
+    height: 1px;
+    animation: techBorderSlide 3s linear infinite;
+  }
+
+  .digital-noise {
+    position: relative;
+  }
+
+  .digital-noise::after {
+    content: '';
+    @apply absolute inset-0 bg-black opacity-5;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  .hover-glow {
+    @apply transition-all duration-300;
+  }
+
+  .hover-glow:hover {
+    filter: drop-shadow(0 0 8px rgba(0, 255, 65, 0.5));
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glowingText {
+  0%, 100% {
+    text-shadow: 0 0 5px rgba(0, 255, 65, 0.7);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(0, 255, 65, 0.9), 0 0 30px rgba(0, 255, 65, 0.5);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(0, 255, 65, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(0, 255, 65, 0.8));
+  }
+}
+
+@keyframes floatAnimation {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes techBorderSlide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.glowing-text {
+  animation: glowingText 2s infinite;
+}
+
+/* Анимации плавающих объектов */
+.float-1 {
+  animation: floatAnimation 5s ease-in-out infinite;
+}
+
+.float-2 {
+  animation: floatAnimation 7s ease-in-out infinite;
+}
+
+.float-3 {
+  animation: floatAnimation 9s ease-in-out infinite;
+}
+
+/* Пульсирующее свечение */
+.pulse-glow {
+  animation: pulseGlow 2s infinite;
+}
+
+/* Эффект набегающего цифрового шума */
+.digital-wave {
+  background-image: linear-gradient(90deg, 
+    rgba(0, 255, 65, 0) 0%, 
+    rgba(0, 255, 65, 0.2) 25%, 
+    rgba(0, 255, 65, 0.2) 75%, 
+    rgba(0, 255, 65, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: digitalWave 5s infinite linear;
+}
+
+@keyframes digitalWave {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
