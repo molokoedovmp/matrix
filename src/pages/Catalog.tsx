@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import Navbar from '../components/navigation/Navbar';
 import Footer from '../components/ui/Footer';
@@ -15,7 +15,9 @@ import {
   Laptop,
   TabletSmartphone,
   Watch,
-  Loader2
+  Loader2,
+  Grid,
+  List
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -234,6 +236,27 @@ const Catalog = () => {
     'iPad': <TabletSmartphone size={20} />,
     'Watch': <Watch size={20} />
   };
+
+  // Состояние для управления видимостью мобильных фильтров
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+
+  // Ссылка на DOM-элемент блока фильтров
+  const filtersRef = useRef<HTMLDivElement>(null);
+
+  // Обработчик клика вне блока фильтров
+  const handleClickOutside = (event: MouseEvent) => {
+    if (filtersRef.current && !filtersRef.current.contains(event.target as Node)) {
+      setIsMobileFiltersOpen(false);
+    }
+  };
+
+  // Добавляем слушатель клика вне блока фильтров
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     // Проверяем параметры URL при загрузке страницы
@@ -517,38 +540,31 @@ const Catalog = () => {
                   {showFilters ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                 </button>
                 
-                <div className="flex items-center space-x-2 ml-4">
+                <div className="flex items-center space-x-4">
                   <button
                     onClick={() => setViewType('grid')}
-                    className={`p-2 rounded-md transition-colors ${
-                      viewType === 'grid' 
+                    className={`
+                      p-2 rounded-md transition-colors 
+                      ${viewType === 'grid' 
                         ? 'bg-matrix-green/20 text-matrix-green' 
-                        : 'text-gray-400 hover:text-white'
-                    }`}
-                    title="Сетка"
+                        : 'text-gray-400 hover:text-white hover:bg-white/10'
+                      }
+                    `}
                   >
-                    <div className="grid grid-cols-2 gap-0.5">
-                      <div className="w-2 h-2 bg-current rounded-sm"></div>
-                      <div className="w-2 h-2 bg-current rounded-sm"></div>
-                      <div className="w-2 h-2 bg-current rounded-sm"></div>
-                      <div className="w-2 h-2 bg-current rounded-sm"></div>
-                    </div>
+                    <Grid size={20} />
                   </button>
                   
                   <button
                     onClick={() => setViewType('list')}
-                    className={`p-2 rounded-md transition-colors ${
-                      viewType === 'list' 
-                        ? 'bg-matrix-green/20 text-matrix-green' 
-                        : 'text-gray-400 hover:text-white'
-                    }`}
-                    title="Список"
+                    className={`
+                      p-2 rounded-md transition-colors
+                      ${viewType === 'list'
+                        ? 'bg-matrix-green/20 text-matrix-green'
+                        : 'text-gray-400 hover:text-white hover:bg-white/10'
+                      }
+                    `}
                   >
-                    <div className="flex flex-col space-y-0.5">
-                      <div className="w-4 h-1 bg-current rounded-sm"></div>
-                      <div className="w-4 h-1 bg-current rounded-sm"></div>
-                      <div className="w-4 h-1 bg-current rounded-sm"></div>
-                    </div>
+                    <List size={20} />
                   </button>
                 </div>
 
