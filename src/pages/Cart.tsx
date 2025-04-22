@@ -82,7 +82,7 @@ const Cart = () => {
   };
   
   const sendOrderConfirmation = async () => {
-    const adminEmail = 'despot551@yandex.ru';
+    const adminEmail = 'rassolenko.maxim@yandex.ru';
     
     // Вариант 1: Использовать сервис отправки email напрямую
     try {

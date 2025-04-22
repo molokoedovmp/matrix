@@ -14,7 +14,7 @@ const testEmail = async () => {
   try {
     const info = await transporter.sendMail({
       from: '"MΛTR1X Market" <molokoedovmp@gmail.com>',
-      to: 'molokoedovmp@gmail.com', // Куда отправить тестовое письмо
+      to: 'rassolenko.maxim@yandex.ru', // Куда отправить тестовое письмо
       subject: 'Тестовое письмо от MΛTR1X Market',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

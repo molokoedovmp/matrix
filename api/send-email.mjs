@@ -28,7 +28,7 @@ export default async function handler(request, response) {
     });
 
     // Email администратора
-    const ADMIN_EMAIL = 'despot551@yandex.ru';
+    const ADMIN_EMAIL = 'rassolenko.maxim@yandex.ru';
 
     // Формируем HTML-письмо
     const htmlContent = `
