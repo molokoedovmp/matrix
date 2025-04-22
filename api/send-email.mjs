@@ -28,7 +28,7 @@ export default async function handler(request, response) {
     });
 
     // Email администратора
-    const ADMIN_EMAIL = 'molokoedovmp@gmail.com';
+    const ADMIN_EMAIL = 'mpmolokoedov@gmail.com';
 
     // Формируем HTML-письмо
     const htmlContent = `

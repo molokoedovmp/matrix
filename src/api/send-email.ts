@@ -22,7 +22,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // Email администратора, который будет получать уведомления
-const ADMIN_EMAIL = 'molokoedovmp@gmail.com'; // Замените на нужный email
+const ADMIN_EMAIL = 'mpmolokoedov@gmail.com'; // Замените на нужный email
 
 export const sendOrderNotification = async (data: EmailData): Promise<void> => {
   try {
