@@ -93,5 +93,28 @@ export const orderService = {
       console.error(`Error updating order status:`, error);
       throw error;
     }
+  },
+  
+  async sendEmailNotification(email: string, data: any): Promise<void> {
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: email,
+          subject: 'Новый заказ',
+          orderData: data
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Ошибка отправки email');
+      }
+    } catch (error) {
+      console.error('Ошибка отправки уведомления:', error);
+      throw error;
+    }
   }
 }; 

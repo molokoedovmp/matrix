@@ -81,6 +81,25 @@ const Cart = () => {
     }
   };
   
+  const sendOrderConfirmation = async () => {
+    const adminEmail = 'despot551@yandex.ru';
+    
+    // Вариант 1: Использовать сервис отправки email напрямую
+    try {
+      await orderService.sendEmailNotification(adminEmail, {
+        items,
+        customerName: orderForm.customer_name,
+        totalPrice: getTotalPrice()
+      });
+      console.log('Уведомление отправлено');
+    } catch (error) {
+      console.error('Ошибка отправки уведомления:', error);
+    }
+    
+    // Или вариант 2: Просто закомментировать неиспользуемый код
+    // notifications.sendToAdmin('despot551@yandex.ru', orderData); // Ошибка здесь
+  };
+  
   return (
     <div className="min-h-screen bg-black flex flex-col">
       <Navbar />
