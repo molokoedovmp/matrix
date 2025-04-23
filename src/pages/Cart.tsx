@@ -297,10 +297,6 @@ const Cart = () => {
                       </div>
                     </div>
                     
-                    <div className="flex justify-between mb-2">
-                      <span className="text-gray-400">Доставка:</span>
-                      <span className="text-white">Бесплатно</span>
-                    </div>
                     
                     <div className="flex justify-between font-bold">
                       <span className="text-white">Итого к оплате:</span>

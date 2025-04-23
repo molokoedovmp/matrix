@@ -35,10 +35,10 @@ const Index = () => {
       <div className={`transition-opacity duration-1000 ${isInitialized ? 'opacity-100' : 'opacity-0'}`}>
         <Navbar />
         <div id="top"></div>
-        <Hero />
+        {/* <Hero /> */}
+        <Categories />
         <FeaturedProducts />
         <TechSpecs />
-        <Categories />
         <InnovationSection />
         <TestimonialSection />
         <NewsletterSection />

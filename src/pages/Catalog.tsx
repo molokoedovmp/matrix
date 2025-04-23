@@ -49,148 +49,6 @@ interface Product {
   inStock?: boolean;
 }
 
-// Расширенные данные продуктов
-// const allProducts: Product[] = [
-//   {
-//     id: 'iphone-14-pro',
-//     name: 'iPhone 14 Pro',
-//     category: 'iPhone',
-//     price: 129990,
-//     image: 'https://www.apple.com/v/iphone-14-pro/c/images/overview/hero/hero_endframe__dtzvajyextyu_large.jpg',
-//     tags: ['премиум', 'новинка'],
-//     condition: 'новый',
-//     year: 2022,
-//     color: 'черный',
-//     inStock: true
-//   },
-//   {
-//     id: 'iphone-14',
-//     name: 'iPhone 14',
-//     category: 'iPhone',
-//     price: 99990,
-//     image: 'https://www.apple.com/v/iphone-14/i/images/overview/hero/hero_iphone_14__de41900yuggi_large.jpg',
-//     tags: ['хит'],
-//     condition: 'новый',
-//     year: 2022,
-//     color: 'синий',
-//     inStock: true
-//   },
-//   {
-//     id: 'iphone-13',
-//     name: 'iPhone 13',
-//     category: 'iPhone',
-//     price: 79990,
-//     image: 'https://www.apple.com/v/iphone-13/h/images/key-features/hero/hero_green__rz0u5fdewmqq_large.jpg',
-//     condition: 'новый',
-//     year: 2021,
-//     color: 'зеленый',
-//     inStock: true
-//   },
-//   {
-//     id: 'macbook-pro-14',
-//     name: 'MacBook Pro 14"',
-//     category: 'Mac',
-//     price: 189990,
-//     image: 'https://www.apple.com/v/mac/home/bp/images/overview/hero/macbook_pro_14_16__dmqm5594oyau_large.jpg',
-//     tags: ['премиум', 'новинка'],
-//     condition: 'новый',
-//     year: 2023,
-//     color: 'серый',
-//     inStock: true
-//   },
-//   {
-//     id: 'macbook-air-m2',
-//     name: 'MacBook Air M2',
-//     category: 'Mac',
-//     price: 149990,
-//     image: 'https://www.apple.com/v/macbook-air-m2/b/images/overview/hero/hero_mba__rh3ancbuky6q_large.jpg',
-//     tags: ['хит'],
-//     condition: 'новый',
-//     year: 2022,
-//     color: 'серебристый',
-//     inStock: true
-//   },
-//   {
-//     id: 'mac-mini',
-//     name: 'Mac mini',
-//     category: 'Mac',
-//     price: 89990,
-//     image: 'https://www.apple.com/v/mac-mini/o/images/overview/hero/hero_mac_mini__dues4fa5xhuy_large.jpg',
-//     condition: 'новый',
-//     year: 2023,
-//     color: 'серый',
-//     inStock: false
-//   },
-//   {
-//     id: 'ipad-pro',
-//     name: 'iPad Pro',
-//     category: 'iPad',
-//     price: 109990,
-//     image: 'https://www.apple.com/v/ipad-pro/al/images/overview/hero/hero__fexbvbcv5fle_large.jpg',
-//     tags: ['премиум'],
-//     condition: 'новый',
-//     year: 2022,
-//     color: 'серебристый',
-//     inStock: true
-//   },
-//   {
-//     id: 'ipad-air',
-//     name: 'iPad Air',
-//     category: 'iPad',
-//     price: 79990,
-//     image: 'https://www.apple.com/v/ipad-air/r/images/overview/hero/hero__fkjvzyuqdnuu_large.jpg',
-//     condition: 'новый',
-//     year: 2022,
-//     color: 'голубой',
-//     inStock: true
-//   },
-//   {
-//     id: 'ipad-mini',
-//     name: 'iPad mini',
-//     category: 'iPad',
-//     price: 59990,
-//     image: 'https://www.apple.com/v/ipad-mini/i/images/overview/hero/hero_ipad_mini__dn6g8b0hw8om_large.jpg',
-//     condition: 'новый',
-//     year: 2021,
-//     color: 'фиолетовый',
-//     inStock: true
-//   },
-//   {
-//     id: 'apple-watch-series-8',
-//     name: 'Apple Watch Series 8',
-//     category: 'Watch',
-//     price: 49990,
-//     image: 'https://www.apple.com/v/apple-watch-series-8/c/images/overview/hero/hero_static__c9d1bk9frtua_large.jpg',
-//     condition: 'новый',
-//     year: 2022,
-//     color: 'красный',
-//     inStock: true
-//   },
-//   {
-//     id: 'apple-watch-ultra',
-//     name: 'Apple Watch Ultra',
-//     category: 'Watch',
-//     price: 79990,
-//     image: 'https://www.apple.com/v/apple-watch-ultra/c/images/overview/hero/hero_static__fmaio9kz47mm_large.jpg',
-//     tags: ['премиум', 'новинка'],
-//     condition: 'новый',
-//     year: 2022,
-//     color: 'оранжевый',
-//     inStock: true
-//   },
-//   {
-//     id: 'apple-watch-se',
-//     name: 'Apple Watch SE',
-//     category: 'Watch',
-//     price: 29990,
-//     image: 'https://www.apple.com/v/apple-watch-se/j/images/overview/hero/hero_static__ffdxl9n8c8ye_large.jpg',
-//     condition: 'новый',
-//     year: 2022,
-//     color: 'черный',
-//     inStock: false
-//   }
-// ];
-
 const categories = ['Все', 'iPhone', 'Mac', 'iPad', 'Watch'];
 
 const categoryIcons = {
@@ -477,6 +335,36 @@ const Catalog = () => {
     return null;
   };
 
+  // Добавляем состояния для пагинации
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage, setProductsPerPage] = useState(12);
+  
+  // Расчет индексов для пагинации
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  
+  // Функция для изменения страницы
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  
+  // Переходы на следующую/предыдущую страницу
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+      // Прокрутка к верху при смене страницы
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+  
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+      // Прокрутка к верху при смене страницы
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   // Добавляем эффект загрузки страницы
   if (pageLoading || isLoadingProducts || isLoadingCategories) {
     return (
@@ -526,58 +414,52 @@ const Catalog = () => {
                 )}
               </div>
               
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setShowFilters(!showFilters)} 
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md border transition-all ${
-                    showFilters 
-                      ? 'border-matrix-green text-matrix-green bg-matrix-green/10' 
-                      : 'border-gray-700 text-gray-300 hover:border-gray-500'
-                  }`}
+              {/* Исправление мобильного фильтра - добавляем ограничение по ширине */}
+              <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 sm:overflow-visible">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="px-3 py-2 bg-black/50 border border-gray-700 rounded-md text-white hover:border-matrix-green transition-colors flex items-center whitespace-nowrap"
                 >
-                  <Filter size={18} />
+                  <Filter size={18} className="mr-2 sm:mr-0" />
                   <span className="hidden sm:inline">Фильтры</span>
-                  {showFilters ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  {showFilters ? (
+                    <ChevronUp size={18} className="ml-0 sm:ml-2 hidden sm:inline" />
+                  ) : (
+                    <ChevronDown size={18} className="ml-0 sm:ml-2 hidden sm:inline" />
+                  )}
                 </button>
                 
-                <div className="flex items-center space-x-4">
+                <div className="border-r border-gray-700 mx-2"></div>
+                
+                <div className="flex gap-2 items-center">
                   <button
                     onClick={() => setViewType('grid')}
-                    className={`
-                      p-2 rounded-md transition-colors 
-                      ${viewType === 'grid' 
-                        ? 'bg-matrix-green/20 text-matrix-green' 
-                        : 'text-gray-400 hover:text-white hover:bg-white/10'
-                      }
-                    `}
+                    className={`p-2 rounded-md ${viewType === 'grid' ? 'bg-matrix-green/20 text-matrix-green' : 'bg-black/50 text-gray-400'}`}
                   >
                     <Grid size={20} />
                   </button>
-                  
                   <button
                     onClick={() => setViewType('list')}
-                    className={`
-                      p-2 rounded-md transition-colors
-                      ${viewType === 'list'
-                        ? 'bg-matrix-green/20 text-matrix-green'
-                        : 'text-gray-400 hover:text-white hover:bg-white/10'
-                      }
-                    `}
+                    className={`p-2 rounded-md ${viewType === 'list' ? 'bg-matrix-green/20 text-matrix-green' : 'bg-black/50 text-gray-400'}`}
                   >
                     <List size={20} />
                   </button>
                 </div>
-
+                
+                <div className="border-r border-gray-700 mx-2"></div>
+                
+                {/* Сортировка с улучшенным мобильным отображением */}
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-3 py-2 bg-black/50 border border-gray-700 rounded-md focus:outline-none focus:border-matrix-green text-gray-300"
+                  className="px-3 py-2 bg-black/50 border border-gray-700 rounded-md text-white hover:border-matrix-green transition-colors cursor-pointer appearance-none pr-8 relative whitespace-nowrap"
+                  style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'white\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1.5em 1.5em' }}
                 >
                   <option value="default">По умолчанию</option>
                   <option value="price-asc">Цена: по возрастанию</option>
                   <option value="price-desc">Цена: по убыванию</option>
-                  <option value="name-asc">По названию</option>
-                  <option value="name-desc">По названию (обратный порядок)</option>
+                  <option value="name-asc">Название: А-Я</option>
+                  <option value="name-desc">Название: Я-А</option>
                 </select>
               </div>
             </div>
@@ -783,10 +665,10 @@ const Catalog = () => {
           ) : filteredProducts.length > 0 ? (
             <div className={`${viewType === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' : 'space-y-4'} transition-all duration-500 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
               {viewType === 'grid' ? (
-                filteredProducts.map((product, index) => (
-                  <div 
+                currentProducts.map((product, index) => (
+                  <Link 
                     key={product.id}
-                    onClick={() => navigate(`/product/${product.slug}`)}
+                    to={`/product/${product.slug}`}
                     className={`product-card group cursor-pointer transition-all duration-300 transform hover:scale-[1.02]`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
@@ -826,8 +708,8 @@ const Catalog = () => {
                       <h3 className="text-lg font-bold text-white mb-1 group-hover:text-matrix-green transition-colors duration-300">{product.name}</h3>
                       
                       <div className="mt-2">
-                        {/* Рассчитываем цену со скидкой */}
-                        {calculateDiscountPrice(product) && (
+                        {/* Исправление отображения цены - показываем обычную цену, если нет скидки */}
+                        {calculateDiscountPrice(product) ? (
                           <div className="flex items-center">
                             <span className="text-white font-bold">
                               {calculateDiscountPrice(product).toLocaleString('ru-RU')} ₽
@@ -836,14 +718,20 @@ const Catalog = () => {
                               {product.price.toLocaleString('ru-RU')} ₽
                             </span>
                           </div>
+                        ) : (
+                          <div className="flex items-center">
+                            <span className="text-white font-bold">
+                              {product.price.toLocaleString('ru-RU')} ₽
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))
               ) : (
                 <div className="space-y-4">
-                  {filteredProducts.map((product) => (
+                  {currentProducts.map((product) => (
                     <Link 
                       key={product.id} 
                       to={`/product/${product.slug}`}
@@ -903,10 +791,16 @@ const Catalog = () => {
                           
                           <div className="flex items-center justify-between mt-2">
                             <div className="flex items-center">
-                              <span className="text-white text-xl md:text-2xl font-bold">{product.price.toLocaleString('ru-RU')} ₽</span>
-                              {/* Отображаем процент скидки */}
-                              {product.discount_percent && (
-                                <div className="discount-badge">-{product.discount_percent}%</div>
+                              {/* Исправление отображения цены - показываем обычную цену, если нет скидки */}
+                              {calculateDiscountPrice(product) ? (
+                                <div className="text-right">
+                                  <div className="text-xl text-white font-bold">{calculateDiscountPrice(product).toLocaleString('ru-RU')} ₽</div>
+                                  <div className="text-sm text-gray-400 line-through">{product.price.toLocaleString('ru-RU')} ₽</div>
+                                </div>
+                              ) : (
+                                <div className="text-right">
+                                  <div className="text-xl text-white font-bold">{product.price.toLocaleString('ru-RU')} ₽</div>
+                                </div>
                               )}
                             </div>
                             
@@ -938,6 +832,74 @@ const Catalog = () => {
               </button>
             </div>
           )}
+          
+          {/* Добавляем пагинацию */}
+          {filteredProducts.length > 0 && (
+            <div className="mt-10 flex justify-center">
+              <div className="inline-flex shadow-md rounded-md border border-gray-700 overflow-hidden bg-black/40">
+                <button
+                  onClick={prevPage}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 text-sm ${currentPage === 1 ? 'text-gray-500 cursor-not-allowed' : 'text-white hover:bg-matrix-green/20'} transition-colors flex items-center`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Назад
+                </button>
+                
+                {/* Отображаем номера страниц */}
+                <div className="hidden sm:flex">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(pageNum => {
+                      // Отображаем первую и последнюю страницы
+                      if (pageNum === 1 || pageNum === totalPages) return true;
+                      // Отображаем текущую страницу и по одной с каждой стороны
+                      if (Math.abs(pageNum - currentPage) <= 1) return true;
+                      return false;
+                    })
+                    .map((pageNum, index, array) => {
+                      // Добавляем многоточие, если есть пропуски
+                      const showEllipsis = index > 0 && pageNum - array[index - 1] > 1;
+                      
+                      return (
+                        <React.Fragment key={pageNum}>
+                          {showEllipsis && (
+                            <span className="px-4 py-2 text-sm text-gray-400 border-l border-gray-700">...</span>
+                          )}
+                          <button
+                            onClick={() => paginate(pageNum)}
+                            className={`px-4 py-2 text-sm border-l border-gray-700 ${
+                              currentPage === pageNum 
+                                ? 'bg-matrix-green/20 text-matrix-green font-bold' 
+                                : 'text-white hover:bg-matrix-green/10'
+                            } transition-colors`}
+                          >
+                            {pageNum}
+                          </button>
+                        </React.Fragment>
+                      );
+                    })}
+                </div>
+                
+                {/* Для мобильных отображаем текущую страницу из общего количества */}
+                <div className="sm:hidden px-4 py-2 text-sm text-white border-l border-gray-700">
+                  {currentPage} из {totalPages}
+                </div>
+                
+                <button
+                  onClick={nextPage}
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 text-sm border-l border-gray-700 ${currentPage === totalPages ? 'text-gray-500 cursor-not-allowed' : 'text-white hover:bg-matrix-green/20'} transition-colors flex items-center`}
+                >
+                  Вперёд
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
       
@@ -947,3 +909,5 @@ const Catalog = () => {
 };
 
 export default Catalog;
+
+
