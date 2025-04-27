@@ -3,10 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCategories } from '../../hooks/useCategories';
 
 const Categories = () => {
-  const { data: categories, isLoading, error } = useCategories();
+  const { data: allCategories, isLoading, error } = useCategories();
   const navigate = useNavigate();
   
-  console.log('Категории в компоненте Categories:', categories);
+  // Фильтрация категорий, оставляем только с is_featured=true
+  const categories = allCategories?.filter(category => category.is_featured) || [];
+  
+  console.log('Отображаемые категории в компоненте Categories:', categories);
   
   if (isLoading) {
     return (
@@ -17,7 +20,7 @@ const Categories = () => {
   }
   
   if (error || !categories || categories.length === 0) {
-    console.error('Ошибка загрузки категорий:', error);
+    console.error('Ошибка загрузки категорий или нет избранных категорий:', error);
     return (
       <div className="py-12 text-center">
         <div className="text-red-500">Не удалось загрузить категории</div>
