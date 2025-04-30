@@ -219,6 +219,19 @@ const Navbar = () => {
     ));
   };
 
+  // Добавьте этот эффект для блокировки прокрутки страницы при открытом меню
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMenuOpen]);
+
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -451,140 +464,142 @@ const Navbar = () => {
       
       {/* Боковое мобильное меню */}
       <div 
-        className={`fixed top-0 left-0 h-full w-4/5 max-w-xs bg-black/95 backdrop-blur-md border-r border-matrix-green/30 z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-[100dvh] w-4/5 max-w-xs bg-black/95 backdrop-blur-md border-r border-matrix-green/30 z-[9999] transform transition-transform duration-300 ease-in-out ${
           isMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:hidden overflow-y-auto`}
+        } md:hidden overflow-y-auto overscroll-contain`}
         ref={sidebarRef}
       >
-        <div className="p-5 border-b border-matrix-green/30 flex justify-between items-center">
-          <span className="text-xl font-bold text-matrix-green">Меню</span>
-          <button 
-            onClick={() => setIsMenuOpen(false)}
-            className="text-gray-400 hover:text-matrix-green p-1"
-          >
-            <X size={24} />
-          </button>
-        </div>
-        
-        <div className="p-5">
-          <form onSubmit={handleSearch} className="mb-6 flex items-center relative">
-            <input
-              type="text"
-              placeholder="Поиск..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="bg-black/50 border border-matrix-green/30 text-white px-4 py-3 rounded-md focus:outline-none focus:border-matrix-green w-full font-['Courier_New'] text-base"
-            />
-            <button type="submit" className="absolute right-3 text-gray-400 hover:text-matrix-green">
-              <Search size={20} />
-            </button>
-          </form>
-          
-          {/* Результаты поиска */}
-          {isSearchOpen && searchResults.length > 0 && (
-            <div className="mb-6 bg-black/80 border border-matrix-green/30 rounded-md">
-              {searchResults.some(item => item.type === 'category') && (
-                <div className="mb-2">
-                  <div className="text-xs text-gray-500 uppercase tracking-wider px-3 py-1">Категории</div>
-                  {searchResults
-                    .filter(item => item.type === 'category')
-                    .map(category => (
-                      <div 
-                        key={`category-${category.id}`}
-                        onClick={() => handleSearchItemClick(category)}
-                        className="px-3 py-2 hover:bg-matrix-green/10 rounded-md cursor-pointer flex items-center"
-                      >
-                        <span className="text-matrix-green mr-2">#</span>
-                        <span className="text-white">{category.name}</span>
-                      </div>
-                    ))
-                  }
-                </div>
-              )}
-              
-              {searchResults.some(item => item.type === 'product') && (
-                <div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wider px-3 py-1">Товары</div>
-                  {searchResults
-                    .filter(item => item.type === 'product')
-                    .map(product => (
-                      <div 
-                        key={`product-${product.id}`}
-                        onClick={() => handleSearchItemClick(product)}
-                        className="px-3 py-2 hover:bg-matrix-green/10 rounded-md cursor-pointer flex items-center"
-                      >
-                        <div className="w-8 h-8 bg-black/50 rounded overflow-hidden mr-2 flex-shrink-0">
-                          <img 
-                            src={product.image_url} 
-                            alt={product.name} 
-                            className="w-full h-full object-contain"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-white truncate">{product.name}</div>
-                          <div className="text-matrix-green text-sm">{product.price?.toLocaleString('ru-RU')} ₽</div>
-                        </div>
-                        <ChevronRight size={16} className="text-gray-500 ml-2" />
-                      </div>
-                    ))
-                  }
-                </div>
-              )}
-            </div>
-          )}
-          
-          <nav className="space-y-7">
-            <Link 
-              to="/" 
-              className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
+        <div className="p-5 flex flex-col h-[calc(100dvh-60px)] overflow-y-auto">
+          <div className="p-5 border-b border-matrix-green/30 flex justify-between items-center">
+            <span className="text-xl font-bold text-matrix-green">Меню</span>
+            <button 
               onClick={() => setIsMenuOpen(false)}
+              className="text-gray-400 hover:text-matrix-green p-1"
             >
-              ГЛΛВНΛЯ
-            </Link>
+              <X size={24} />
+            </button>
+          </div>
+          
+          <div className="p-5">
+            <form onSubmit={handleSearch} className="mb-6 flex items-center relative">
+              <input
+                type="text"
+                placeholder="Поиск..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="bg-black/50 border border-matrix-green/30 text-white px-4 py-3 rounded-md focus:outline-none focus:border-matrix-green w-full font-['Courier_New'] text-base"
+              />
+              <button type="submit" className="absolute right-3 text-gray-400 hover:text-matrix-green">
+                <Search size={20} />
+              </button>
+            </form>
             
-            <div className="space-y-3">
-              <Link
-                to="/catalog"
+            {/* Результаты поиска */}
+            {isSearchOpen && searchResults.length > 0 && (
+              <div className="mb-6 bg-black/80 border border-matrix-green/30 rounded-md">
+                {searchResults.some(item => item.type === 'category') && (
+                  <div className="mb-2">
+                    <div className="text-xs text-gray-500 uppercase tracking-wider px-3 py-1">Категории</div>
+                    {searchResults
+                      .filter(item => item.type === 'category')
+                      .map(category => (
+                        <div 
+                          key={`category-${category.id}`}
+                          onClick={() => handleSearchItemClick(category)}
+                          className="px-3 py-2 hover:bg-matrix-green/10 rounded-md cursor-pointer flex items-center"
+                        >
+                          <span className="text-matrix-green mr-2">#</span>
+                          <span className="text-white">{category.name}</span>
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
+                
+                {searchResults.some(item => item.type === 'product') && (
+                  <div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wider px-3 py-1">Товары</div>
+                    {searchResults
+                      .filter(item => item.type === 'product')
+                      .map(product => (
+                        <div 
+                          key={`product-${product.id}`}
+                          onClick={() => handleSearchItemClick(product)}
+                          className="px-3 py-2 hover:bg-matrix-green/10 rounded-md cursor-pointer flex items-center"
+                        >
+                          <div className="w-8 h-8 bg-black/50 rounded overflow-hidden mr-2 flex-shrink-0">
+                            <img 
+                              src={product.image_url} 
+                              alt={product.name} 
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white truncate">{product.name}</div>
+                            <div className="text-matrix-green text-sm">{product.price?.toLocaleString('ru-RU')} ₽</div>
+                          </div>
+                          <ChevronRight size={16} className="text-gray-500 ml-2" />
+                        </div>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <nav className="space-y-7">
+              <Link 
+                to="/" 
                 className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
                 onClick={() => setIsMenuOpen(false)}
               >
-                КΛТΛЛОГ
+                ГЛΛВНΛЯ
               </Link>
               
-              <div className="mt-4 space-y-3 pl-2">
-                {isLoadingCategories ? (
-                  <div className="text-gray-400 text-sm">Загрузка...</div>
-                ) : hierarchicalCategories.length > 0 ? (
-                  renderMobileCategoryMenu(hierarchicalCategories)
-                ) : (
-                  <div className="text-gray-400 text-sm">Категории не найдены</div>
-                )}
+              <div className="space-y-3">
+                <Link
+                  to="/catalog"
+                  className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  КΛТΛЛОГ
+                </Link>
+                
+                <div className="mt-4 space-y-3 pl-2">
+                  {isLoadingCategories ? (
+                    <div className="text-gray-400 text-sm">Загрузка...</div>
+                  ) : hierarchicalCategories.length > 0 ? (
+                    renderMobileCategoryMenu(hierarchicalCategories)
+                  ) : (
+                    <div className="text-gray-400 text-sm">Категории не найдены</div>
+                  )}
+                </div>
               </div>
-            </div>
-            
-            <Link 
-              to="/about" 
-              className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              О НΛС
-            </Link>
-            
-            <Link 
-              to="/contacts" 
-              className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              КОНТΛКТЫ
-            </Link>
-          </nav>
+              
+              <Link 
+                to="/about" 
+                className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                О НΛС
+              </Link>
+              
+              <Link 
+                to="/contacts" 
+                className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                КОНТΛКТЫ
+              </Link>
+            </nav>
+          </div>
         </div>
       </div>
       
       {/* Затемнение фона при открытом меню */}
       {isMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black/70 z-40 md:hidden"
+          className="fixed inset-0 bg-black/70 z-[9998] md:hidden"
           onClick={() => setIsMenuOpen(false)}
         ></div>
       )}
