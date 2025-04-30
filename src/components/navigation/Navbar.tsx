@@ -186,11 +186,11 @@ const Navbar = () => {
   // Рекурсивная функция для отображения категорий в мобильном меню
   const renderMobileCategoryMenu = (categories: CategoryWithSubcategories[], level = 0) => {
     return categories.map(category => (
-      <div key={category.id} className="mb-2">
+      <div key={category.id} className="mb-3">
         <div className={`flex items-center justify-between ${level > 0 ? 'pl-4 border-l border-matrix-green/30' : ''}`}>
           <Link
             to={category.slug ? `/catalog?category=${category.slug}` : '/catalog'}
-            className={`text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] text-sm tracking-wide ${level > 0 ? 'ml-2' : ''}`}
+            className={`text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] text-base tracking-wide ${level > 0 ? 'ml-2' : ''}`}
             onClick={() => setIsMenuOpen(false)}
           >
             {category.name}
@@ -199,19 +199,19 @@ const Navbar = () => {
           {category.subcategories && category.subcategories.length > 0 && (
             <button
               onClick={() => toggleCategoryExpand(category.id)}
-              className="p-1 text-gray-400 hover:text-matrix-green"
+              className="p-2 text-gray-400 hover:text-matrix-green"
             >
               {expandedCategories.includes(category.id) ? (
-                <ChevronUp size={16} />
+                <ChevronUp size={20} />
               ) : (
-                <ChevronDown size={16} />
+                <ChevronDown size={20} />
               )}
             </button>
           )}
         </div>
         
         {category.subcategories && category.subcategories.length > 0 && expandedCategories.includes(category.id) && (
-          <div className="mt-2 ml-2">
+          <div className="mt-3 ml-3">
             {renderMobileCategoryMenu(category.subcategories, level + 1)}
           </div>
         )}
@@ -456,27 +456,27 @@ const Navbar = () => {
         } md:hidden overflow-y-auto`}
         ref={sidebarRef}
       >
-        <div className="p-4 border-b border-matrix-green/30 flex justify-between items-center">
+        <div className="p-5 border-b border-matrix-green/30 flex justify-between items-center">
           <span className="text-xl font-bold text-matrix-green">Меню</span>
           <button 
             onClick={() => setIsMenuOpen(false)}
-            className="text-gray-400 hover:text-matrix-green"
+            className="text-gray-400 hover:text-matrix-green p-1"
           >
             <X size={24} />
           </button>
         </div>
         
-        <div className="p-4">
+        <div className="p-5">
           <form onSubmit={handleSearch} className="mb-6 flex items-center relative">
             <input
               type="text"
               placeholder="Поиск..."
               value={searchTerm}
               onChange={handleSearchChange}
-              className="bg-black/50 border border-matrix-green/30 text-white px-3 py-2 rounded-md focus:outline-none focus:border-matrix-green w-full font-['Courier_New'] text-sm"
+              className="bg-black/50 border border-matrix-green/30 text-white px-4 py-3 rounded-md focus:outline-none focus:border-matrix-green w-full font-['Courier_New'] text-base"
             />
-            <button type="submit" className="absolute right-2 text-gray-400 hover:text-matrix-green">
-              <Search size={18} />
+            <button type="submit" className="absolute right-3 text-gray-400 hover:text-matrix-green">
+              <Search size={20} />
             </button>
           </form>
           
@@ -533,38 +533,38 @@ const Navbar = () => {
             </div>
           )}
           
-          <nav className="space-y-6">
+          <nav className="space-y-7">
             <Link 
               to="/" 
-              className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
+              className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
               onClick={() => setIsMenuOpen(false)}
             >
               ГЛΛВНΛЯ
             </Link>
             
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Link
                 to="/catalog"
-                className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
+                className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
                 onClick={() => setIsMenuOpen(false)}
               >
                 КΛТΛЛОГ
               </Link>
               
-              <div className="mt-3 space-y-1 pl-2">
+              <div className="mt-4 space-y-3 pl-2">
                 {isLoadingCategories ? (
-                  <div className="text-gray-400 text-xs">Загрузка...</div>
+                  <div className="text-gray-400 text-sm">Загрузка...</div>
                 ) : hierarchicalCategories.length > 0 ? (
                   renderMobileCategoryMenu(hierarchicalCategories)
                 ) : (
-                  <div className="text-gray-400 text-xs">Категории не найдены</div>
+                  <div className="text-gray-400 text-sm">Категории не найдены</div>
                 )}
               </div>
             </div>
             
             <Link 
               to="/about" 
-              className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
+              className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
               onClick={() => setIsMenuOpen(false)}
             >
               О НΛС
@@ -572,7 +572,7 @@ const Navbar = () => {
             
             <Link 
               to="/contacts" 
-              className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
+              className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
               onClick={() => setIsMenuOpen(false)}
             >
               КОНТΛКТЫ
