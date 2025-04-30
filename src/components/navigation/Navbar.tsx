@@ -1,17 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, Menu, X, ChevronRight } from 'lucide-react';
+import { Search, ShoppingCart, Menu, X, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { useCategories } from '../../hooks/useCategories';
 import { useCart } from '../../hooks/useCart';
 import { useProducts } from '../../hooks/useProducts';
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "../../components/ui/navigation-menu";
+
+interface Category {
+  id: number;
+  name: string;
+  slug?: string;
+  parent_id?: number | null;
+  is_featured?: boolean;
+  image_url?: string;
+}
+
+interface CategoryWithSubcategories extends Category {
+  subcategories?: CategoryWithSubcategories[];
+}
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -19,11 +24,15 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<number[]>([]);
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  const [hoveredCategory, setHoveredCategory] = useState<number | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const catalogRef = useRef<HTMLDivElement>(null);
   
   const navigate = useNavigate();
-  const { data: categories, isLoading: isLoadingCategories } = useCategories();
-  console.log('Категории в Navbar:', categories);
+  const { data: allCategories, isLoading: isLoadingCategories } = useCategories();
   const { data: products } = useProducts();
   const { getTotalItems } = useCart();
   const cartItemCount = getTotalItems();
@@ -31,45 +40,39 @@ const Navbar = () => {
   // Эффект для анимации букв в логотипе
   const [logoText, setLogoText] = useState("MΛTR1X");
   
-  // Добавим тестовые категории на случай, если данные не загружаются
-  const testCategories = [
-    { id: 1, name: 'iPhone', slug: 'iphone' },
-    { id: 2, name: 'Mac', slug: 'mac' },
-    { id: 3, name: 'iPad', slug: 'ipad' },
-    { id: 4, name: 'Watch', slug: 'watch' }
-  ];
-
-  // Используем тестовые категории, если реальные не загрузились
-  const displayCategories = (categories && categories.length > 0) ? categories : testCategories;
+  // Организуем категории в иерархическую структуру
+  const organizeCategories = (categories: Category[] = []): CategoryWithSubcategories[] => {
+    const categoryMap = new Map<number, CategoryWithSubcategories>();
+    const rootCategories: CategoryWithSubcategories[] = [];
+    
+    // Сначала создаем объекты для всех категорий
+    categories.forEach(category => {
+      categoryMap.set(category.id, { ...category, subcategories: [] });
+    });
+    
+    // Затем организуем их в дерево
+    categories.forEach(category => {
+      const categoryWithSubs = categoryMap.get(category.id);
+      if (!categoryWithSubs) return;
+      
+      if (category.parent_id === null || category.parent_id === undefined) {
+        rootCategories.push(categoryWithSubs);
+      } else {
+        const parentCategory = categoryMap.get(category.parent_id);
+        if (parentCategory) {
+          if (!parentCategory.subcategories) {
+            parentCategory.subcategories = [];
+          }
+          parentCategory.subcategories.push(categoryWithSubs);
+        }
+      }
+    });
+    
+    return rootCategories;
+  };
   
-  useEffect(() => {
-    const matrixChars = "ΛBCDΣFGHIJKLM1234567890!@#$%^&*";
-    const originalText = "MΛTR1X";
-    
-    let interval: NodeJS.Timeout;
-    
-    // Случайная анимация букв в логотипе
-    const animateLogo = () => {
-      interval = setInterval(() => {
-        const randomIndex = Math.floor(Math.random() * originalText.length);
-        const randomChar = matrixChars[Math.floor(Math.random() * matrixChars.length)];
-        
-        setLogoText(prev => {
-          const chars = prev.split('');
-          // С вероятностью 70% возвращаем оригинальный символ
-          chars[randomIndex] = Math.random() > 0.3 
-            ? originalText[randomIndex] 
-            : randomChar;
-          return chars.join('');
-        });
-      }, 150);
-    };
-    
-    animateLogo();
-    
-    return () => clearInterval(interval);
-  }, []);
-
+  const hierarchicalCategories = organizeCategories(allCategories);
+  
   // Отслеживание скролла
   useEffect(() => {
     const handleScroll = () => {
@@ -96,6 +99,31 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   
+  // Закрытие каталога при клике вне
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isCatalogOpen && catalogRef.current && !catalogRef.current.contains(event.target as Node)) {
+        setIsCatalogOpen(false);
+        setHoveredCategory(null);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isCatalogOpen]);
+  
+  // Закрытие бокового меню при клике вне
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isMenuOpen && sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMenuOpen]);
+  
   // Функция поиска
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -109,7 +137,7 @@ const Navbar = () => {
       ).slice(0, 5) || [];
       
       // Поиск по категориям
-      const filteredCategories = categories?.filter(category => 
+      const filteredCategories = allCategories?.filter(category => 
         category.name.toLowerCase().includes(value.toLowerCase()) ||
         (category.description && category.description.toLowerCase().includes(value.toLowerCase()))
       ).slice(0, 3) || [];
@@ -143,6 +171,53 @@ const Navbar = () => {
     setIsSearchOpen(false);
     setSearchTerm('');
   };
+  
+  // Функция для переключения раскрытия категории
+  const toggleCategoryExpand = (categoryId: number) => {
+    setExpandedCategories(prev => {
+      if (prev.includes(categoryId)) {
+        return prev.filter(id => id !== categoryId);
+      } else {
+        return [...prev, categoryId];
+      }
+    });
+  };
+  
+  // Рекурсивная функция для отображения категорий в мобильном меню
+  const renderMobileCategoryMenu = (categories: CategoryWithSubcategories[], level = 0) => {
+    return categories.map(category => (
+      <div key={category.id} className="mb-2">
+        <div className={`flex items-center justify-between ${level > 0 ? 'pl-4 border-l border-matrix-green/30' : ''}`}>
+          <Link
+            to={category.slug ? `/catalog?category=${category.slug}` : '/catalog'}
+            className={`text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] text-sm tracking-wide ${level > 0 ? 'ml-2' : ''}`}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            {category.name}
+          </Link>
+          
+          {category.subcategories && category.subcategories.length > 0 && (
+            <button
+              onClick={() => toggleCategoryExpand(category.id)}
+              className="p-1 text-gray-400 hover:text-matrix-green"
+            >
+              {expandedCategories.includes(category.id) ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
+            </button>
+          )}
+        </div>
+        
+        {category.subcategories && category.subcategories.length > 0 && expandedCategories.includes(category.id) && (
+          <div className="mt-2 ml-2">
+            {renderMobileCategoryMenu(category.subcategories, level + 1)}
+          </div>
+        )}
+      </div>
+    ));
+  };
 
   return (
     <header 
@@ -163,60 +238,114 @@ const Navbar = () => {
           </Link>
 
           {/* Навигация для десктопа */}
-          <nav className="hidden md:flex items-center">
-            <NavigationMenu>
-              <NavigationMenuList className="bg-transparent space-x-10">
-                <NavigationMenuItem>
-                  <Link to="/" className="text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase">
-                    ГЛΛВНΛЯ
-                  </Link>
-                </NavigationMenuItem>
-                
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase bg-transparent data-[state=open]:bg-black/80 data-[state=open]:text-matrix-green">
-                    КΛТΛЛОГ
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent className="bg-black/95 border border-matrix-green/30 rounded-md shadow-lg shadow-matrix-green/20 max-h-[70vh] overflow-y-auto">
-                    <div className="p-4 w-[300px]">
-                      <div className="mb-4">
-                        <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-2"># Категории</h3>
-                        <Link 
-                          to="/catalog" 
-                          className="block p-2 rounded-md hover:bg-matrix-green/10 transition-colors text-matrix-green font-medium"
-                        >
-                          Все категории
-                        </Link>
-                      </div>
+          <nav className="hidden md:flex items-center space-x-10">
+            <Link 
+              to="/" 
+              className="text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
+            >
+              ГЛΛВНΛЯ
+            </Link>
+            
+            <div 
+              ref={catalogRef}
+              className="relative"
+              onMouseLeave={() => {
+                setTimeout(() => {
+                  if (!catalogRef.current?.matches(':hover')) {
+                    setHoveredCategory(null);
+                    setIsCatalogOpen(false);
+                  }
+                }, 100);
+              }}
+            >
+              <button
+                onClick={() => setIsCatalogOpen(!isCatalogOpen)}
+                className="flex items-center text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
+              >
+                КΛТΛЛОГ
+                <span className={`ml-1 transition-transform duration-300 ${isCatalogOpen ? 'rotate-180' : ''}`}>
+                  <ChevronDown size={16} />
+                </span>
+              </button>
+              
+              {isCatalogOpen && (
+                <div className="absolute top-full left-0 mt-2 bg-black/95 border border-matrix-green/30 rounded-md shadow-lg shadow-matrix-green/20 z-50 flex">
+                  {/* Левая колонка с категориями */}
+                  <div className="w-64 p-4">
+                    <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-4"># КАТЕГОРИИ</h3>
+                    <div className="space-y-1">
+                      <Link
+                        to="/catalog"
+                        className="block p-2 rounded-md hover:bg-matrix-green/10 transition-colors text-matrix-green font-medium"
+                        onClick={() => setIsCatalogOpen(false)}
+                      >
+                        Все категории
+                      </Link>
                       
-                      <div className="space-y-1">
-                        {isLoadingCategories ? (
-                          <div className="text-gray-400 text-sm p-2">Загрузка категорий...</div>
-                        ) : displayCategories.length > 0 ? (
-                          displayCategories.map((category) => (
-                            <Link
-                              key={category.id}
-                              to={`/catalog?category=${category.slug}`}
-                              className="block p-2 rounded-md hover:bg-matrix-green/10 transition-colors text-gray-300 hover:text-matrix-green"
-                            >
-                              {category.name}
-                            </Link>
-                          ))
-                        ) : (
-                          <div className="text-gray-400 text-sm p-2">Категории не найдены</div>
-                        )}
+                      {isLoadingCategories ? (
+                        <div className="text-gray-400 text-sm p-2">Загрузка категорий...</div>
+                      ) : hierarchicalCategories.length > 0 ? (
+                        hierarchicalCategories.map(category => (
+                          <div
+                            key={category.id}
+                            className={`block p-2 rounded-md transition-colors text-gray-300 hover:text-matrix-green flex items-center justify-between cursor-pointer ${
+                              hoveredCategory === category.id ? 'bg-matrix-green/10 text-matrix-green' : ''
+                            }`}
+                            onMouseEnter={() => setHoveredCategory(category.id)}
+                          >
+                            <span>{category.name}</span>
+                            {category.subcategories && category.subcategories.length > 0 && (
+                              <ChevronRight size={16} className="text-gray-500" />
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-gray-400 text-sm p-2">Категории не найдены</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Правая колонка с подкатегориями */}
+                  {hoveredCategory !== null && (
+                    <div className="w-64 max-h-[70vh] overflow-y-auto bg-black/95 border-l border-matrix-green/30">
+                      <div className="p-4">
+                        <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-4 sticky top-0 bg-black/95 z-10">
+                          # {hierarchicalCategories.find(cat => cat.id === hoveredCategory)?.name || 'Подкатегории'}
+                        </h3>
+                        <div className="space-y-1">
+                          {hierarchicalCategories
+                            .find(cat => cat.id === hoveredCategory)
+                            ?.subcategories?.map(subcategory => (
+                              <Link
+                                key={subcategory.id}
+                                to={subcategory.slug ? `/catalog?category=${subcategory.slug}` : '/catalog'}
+                                className="block p-2 rounded-md hover:bg-matrix-green/10 transition-colors text-gray-300 hover:text-matrix-green"
+                                onClick={() => setIsCatalogOpen(false)}
+                              >
+                                {subcategory.name}
+                              </Link>
+                            ))}
+                        </div>
                       </div>
                     </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-                
-                <NavigationMenuItem>
-                  <Link to="/about" className="text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase">
-                    О НΛС
-                  </Link>
-                </NavigationMenuItem>
-                
-              </NavigationMenuList>
-            </NavigationMenu>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <Link 
+              to="/about" 
+              className="text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
+            >
+              О НΛС
+            </Link>
+            
+            <Link 
+              to="/contacts" 
+              className="text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
+            >
+              КОНТΛКТЫ
+            </Link>
           </nav>
 
           {/* Поиск и корзина */}
@@ -320,119 +449,144 @@ const Navbar = () => {
         </div>
       </div>
       
-      {/* Мобильное меню */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-black/95 backdrop-blur-md border-t border-matrix-green/30 py-4 max-h-[80vh] overflow-y-auto">
-          <div className="container mx-auto px-4">
-            <form onSubmit={handleSearch} className="mb-4 flex items-center relative">
-              <input
-                type="text"
-                placeholder="Поиск..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className="bg-black/50 border border-matrix-green/30 text-white px-3 py-2 rounded-md focus:outline-none focus:border-matrix-green w-full font-['Courier_New'] text-sm"
-              />
-              <button type="submit" className="absolute right-2 text-gray-400 hover:text-matrix-green">
-                <Search size={18} />
-              </button>
-            </form>
-            
-            {/* Мобильные результаты поиска */}
-            {isSearchOpen && searchResults.length > 0 && (
-              <div className="mb-4 bg-black/80 border border-matrix-green/30 rounded-md">
-                <div className="p-2">
-                  {searchResults.slice(0, 5).map((item, index) => (
-                    <div 
-                      key={`${item.type}-${item.id}`}
-                      onClick={() => handleSearchItemClick(item)}
-                      className={`px-3 py-2 hover:bg-matrix-green/10 rounded-md cursor-pointer flex items-center ${
-                        index < searchResults.length - 1 ? 'border-b border-gray-800' : ''
-                      }`}
-                    >
-                      {item.type === 'product' && (
+      {/* Боковое мобильное меню */}
+      <div 
+        className={`fixed top-0 left-0 h-full w-4/5 max-w-xs bg-black/95 backdrop-blur-md border-r border-matrix-green/30 z-50 transform transition-transform duration-300 ease-in-out ${
+          isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:hidden overflow-y-auto`}
+        ref={sidebarRef}
+      >
+        <div className="p-4 border-b border-matrix-green/30 flex justify-between items-center">
+          <span className="text-xl font-bold text-matrix-green">Меню</span>
+          <button 
+            onClick={() => setIsMenuOpen(false)}
+            className="text-gray-400 hover:text-matrix-green"
+          >
+            <X size={24} />
+          </button>
+        </div>
+        
+        <div className="p-4">
+          <form onSubmit={handleSearch} className="mb-6 flex items-center relative">
+            <input
+              type="text"
+              placeholder="Поиск..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="bg-black/50 border border-matrix-green/30 text-white px-3 py-2 rounded-md focus:outline-none focus:border-matrix-green w-full font-['Courier_New'] text-sm"
+            />
+            <button type="submit" className="absolute right-2 text-gray-400 hover:text-matrix-green">
+              <Search size={18} />
+            </button>
+          </form>
+          
+          {/* Результаты поиска */}
+          {isSearchOpen && searchResults.length > 0 && (
+            <div className="mb-6 bg-black/80 border border-matrix-green/30 rounded-md">
+              {searchResults.some(item => item.type === 'category') && (
+                <div className="mb-2">
+                  <div className="text-xs text-gray-500 uppercase tracking-wider px-3 py-1">Категории</div>
+                  {searchResults
+                    .filter(item => item.type === 'category')
+                    .map(category => (
+                      <div 
+                        key={`category-${category.id}`}
+                        onClick={() => handleSearchItemClick(category)}
+                        className="px-3 py-2 hover:bg-matrix-green/10 rounded-md cursor-pointer flex items-center"
+                      >
+                        <span className="text-matrix-green mr-2">#</span>
+                        <span className="text-white">{category.name}</span>
+                      </div>
+                    ))
+                  }
+                </div>
+              )}
+              
+              {searchResults.some(item => item.type === 'product') && (
+                <div>
+                  <div className="text-xs text-gray-500 uppercase tracking-wider px-3 py-1">Товары</div>
+                  {searchResults
+                    .filter(item => item.type === 'product')
+                    .map(product => (
+                      <div 
+                        key={`product-${product.id}`}
+                        onClick={() => handleSearchItemClick(product)}
+                        className="px-3 py-2 hover:bg-matrix-green/10 rounded-md cursor-pointer flex items-center"
+                      >
                         <div className="w-8 h-8 bg-black/50 rounded overflow-hidden mr-2 flex-shrink-0">
                           <img 
-                            src={item.image_url} 
-                            alt={item.name} 
+                            src={product.image_url} 
+                            alt={product.name} 
                             className="w-full h-full object-contain"
                           />
                         </div>
-                      )}
-                      {item.type === 'category' && (
-                        <span className="text-matrix-green mr-2 text-lg">#</span>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="text-white truncate">{item.name}</div>
-                        {item.type === 'product' && (
-                          <div className="text-matrix-green text-sm">{item.price?.toLocaleString('ru-RU')} ₽</div>
-                        )}
-                        {item.type === 'category' && (
-                          <div className="text-gray-400 text-xs">Категория</div>
-                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-white truncate">{product.name}</div>
+                          <div className="text-matrix-green text-sm">{product.price?.toLocaleString('ru-RU')} ₽</div>
+                        </div>
+                        <ChevronRight size={16} className="text-gray-500 ml-2" />
                       </div>
-                      <ChevronRight size={16} className="text-gray-500 ml-2" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            <nav className="flex flex-col space-y-6">
-              <Link 
-                to="/" 
-                className="text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                ГЛΛВНΛЯ
-              </Link>
-              
-              <div className="space-y-3">
-                <div className="text-gray-300 font-['Courier_New'] tracking-widest text-sm uppercase">КΛТΛЛОГ</div>
-                <div className="pl-4 space-y-3">
-                  <Link
-                    to="/catalog"
-                    className="block text-matrix-green hover:text-matrix-green/80 transition-colors duration-300 font-['Courier_New'] text-xs tracking-wide"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Все категории
-                  </Link>
-                  {isLoadingCategories ? (
-                    <div className="text-gray-400 text-xs">Загрузка...</div>
-                  ) : displayCategories.length > 0 ? (
-                    displayCategories.map((category) => (
-                      <Link
-                        key={category.id}
-                        to={`/catalog?category=${category.slug}`}
-                        className="block text-gray-400 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] text-xs tracking-wide"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        {category.name}
-                      </Link>
                     ))
-                  ) : (
-                    <div className="text-gray-400 text-xs">Категории не найдены</div>
-                  )}
+                  }
                 </div>
+              )}
+            </div>
+          )}
+          
+          <nav className="space-y-6">
+            <Link 
+              to="/" 
+              className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              ГЛΛВНΛЯ
+            </Link>
+            
+            <div className="space-y-2">
+              <Link
+                to="/catalog"
+                className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                КΛТΛЛОГ
+              </Link>
+              
+              <div className="mt-3 space-y-1 pl-2">
+                {isLoadingCategories ? (
+                  <div className="text-gray-400 text-xs">Загрузка...</div>
+                ) : hierarchicalCategories.length > 0 ? (
+                  renderMobileCategoryMenu(hierarchicalCategories)
+                ) : (
+                  <div className="text-gray-400 text-xs">Категории не найдены</div>
+                )}
               </div>
-              
-              <Link 
-                to="/about" 
-                className="text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                О НΛС
-              </Link>
-              
-              <Link 
-                to="/contacts" 
-                className="text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                КОНТΛКТЫ
-              </Link>
-            </nav>
-          </div>
+            </div>
+            
+            <Link 
+              to="/about" 
+              className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              О НΛС
+            </Link>
+            
+            <Link 
+              to="/contacts" 
+              className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              КОНТΛКТЫ
+            </Link>
+          </nav>
         </div>
+      </div>
+      
+      {/* Затемнение фона при открытом меню */}
+      {isMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/70 z-40 md:hidden"
+          onClick={() => setIsMenuOpen(false)}
+        ></div>
       )}
     </header>
   );

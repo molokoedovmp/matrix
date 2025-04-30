@@ -201,20 +201,55 @@ const Catalog = () => {
     }
   }, [searchTerm, priceRange, selectedYears, selectedColors, onlyInStock, sortBy]);
 
+  // Функция для проверки, принадлежит ли продукт к категории или её подкатегориям
+  const isProductInCategoryOrSubcategories = (product: any, categoryName: string) => {
+    // Если категория не выбрана, возвращаем true для всех продуктов
+    if (categoryName === 'Все') return true;
+    
+    // Находим категорию по имени
+    const findCategoryByName = (categories: any[], name: string): any | null => {
+      for (const category of categories) {
+        if (category.name === name) return category;
+        
+        if (category.subcategories && category.subcategories.length > 0) {
+          const found = findCategoryByName(category.subcategories, name);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    const category = findCategoryByName(hierarchicalCategories, categoryName);
+    if (!category) return false;
+    
+    // Получаем все ID категории и её подкатегорий
+    const getAllCategoryIds = (category: any): number[] => {
+      const ids = [category.id];
+      if (category.subcategories && category.subcategories.length > 0) {
+        category.subcategories.forEach((subcat: any) => {
+          ids.push(...getAllCategoryIds(subcat));
+        });
+      }
+      return ids;
+    };
+    
+    const categoryIds = getAllCategoryIds(category);
+    
+    // Проверяем, принадлежит ли продукт к одной из этих категорий
+    return categoryIds.includes(product.category_id);
+  };
+
+  // Измените функцию applyFilters
   const applyFilters = () => {
     console.log('Применение фильтров. Активная категория:', activeCategory);
     console.log('Все продукты перед фильтрацией:', allProducts);
     
     let filtered = [...allProducts];
     
-    // Фильтр по категории
+    // Фильтр по категории с учетом подкатегорий
     if (activeCategory !== 'Все') {
       console.log('Фильтрация по категории:', activeCategory);
-      filtered = filtered.filter(product => {
-        const categoryMatch = product.category_name === activeCategory || product.category === activeCategory;
-        console.log(`Продукт ${product.name}, категория: ${product.category_name || product.category}, совпадение: ${categoryMatch}`);
-        return categoryMatch;
-      });
+      filtered = filtered.filter(product => isProductInCategoryOrSubcategories(product, activeCategory));
     }
     
     // Фильтр по поисковому запросу
@@ -365,6 +400,96 @@ const Catalog = () => {
     }
   };
 
+  // Добавьте эти состояния
+  const [expandedCategories, setExpandedCategories] = useState<number[]>([]);
+  const { data: allCategoriesData } = useCategories();
+  
+  // Функция для организации категорий в иерархию
+  const organizeCategories = (categories: any[] = []) => {
+    const categoryMap = new Map();
+    const rootCategories = [];
+    
+    // Сначала создаем объекты для всех категорий
+    categories.forEach(category => {
+      categoryMap.set(category.id, { ...category, subcategories: [] });
+    });
+    
+    // Затем организуем их в дерево
+    categories.forEach(category => {
+      const categoryWithSubs = categoryMap.get(category.id);
+      if (!categoryWithSubs) return;
+      
+      if (category.parent_id === null || category.parent_id === undefined) {
+        rootCategories.push(categoryWithSubs);
+      } else {
+        const parentCategory = categoryMap.get(category.parent_id);
+        if (parentCategory) {
+          if (!parentCategory.subcategories) {
+            parentCategory.subcategories = [];
+          }
+          parentCategory.subcategories.push(categoryWithSubs);
+        }
+      }
+    });
+    
+    return rootCategories;
+  };
+  
+  // Организуем категории в иерархическую структуру
+  const hierarchicalCategories = organizeCategories(allCategoriesData);
+  
+  // Функция для переключения раскрытия категории
+  const toggleCategoryExpand = (categoryId: number) => {
+    setExpandedCategories(prev => {
+      if (prev.includes(categoryId)) {
+        return prev.filter(id => id !== categoryId);
+      } else {
+        return [...prev, categoryId];
+      }
+    });
+  };
+  
+  // Рекурсивная функция для отображения категорий с подкатегориями
+  const renderCategoryWithSubcategories = (category: any, level = 0) => {
+    const isExpanded = expandedCategories.includes(category.id);
+    const hasSubcategories = category.subcategories && category.subcategories.length > 0;
+    
+    return (
+      <div key={category.id} className="mb-1">
+        <div className="flex items-center">
+          <button
+            className={`flex items-center w-full px-3 py-2 rounded-md transition-colors ${
+              activeCategory === category.name
+                ? 'bg-matrix-green/20 text-matrix-green border border-matrix-green/40'
+                : 'bg-black/30 text-gray-300 border border-transparent hover:border-gray-700'
+            }`}
+            onClick={() => {
+              setActiveCategory(category.name);
+              if (hasSubcategories) {
+                toggleCategoryExpand(category.id);
+              }
+            }}
+          >
+            <span className="flex-1 text-left">{category.name}</span>
+            {hasSubcategories && (
+              <span className="ml-2">
+                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </span>
+            )}
+          </button>
+        </div>
+        
+        {hasSubcategories && isExpanded && (
+          <div className="ml-4 mt-1 space-y-1 border-l border-matrix-green/30 pl-2">
+            {category.subcategories.map((subcategory: any) => 
+              renderCategoryWithSubcategories(subcategory, level + 1)
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Добавляем эффект загрузки страницы
   if (pageLoading || isLoadingProducts || isLoadingCategories) {
     return (
@@ -486,25 +611,23 @@ const Catalog = () => {
                   <div>
                     <h3 className="text-white font-medium mb-3">Категории</h3>
                     <div className="space-y-2">
-                      {categories.map((category) => (
-                        <button
-                          key={category}
-                          className={`flex items-center w-full px-3 py-2 rounded-md transition-colors ${
-                            activeCategory === category
-                              ? 'bg-matrix-green/20 text-matrix-green border border-matrix-green/40'
-                              : 'bg-black/30 text-gray-300 border border-transparent hover:border-gray-700'
-                          }`}
-                          onClick={() => setActiveCategory(category)}
-                        >
-                          {category !== 'Все' && (
-                            <span className="mr-2">{categoryIcons[category as keyof typeof categoryIcons]}</span>
-                          )}
-                          {category}
-                          {activeCategory === category && (
-                            <Check size={16} className="ml-auto" />
-                          )}
-                        </button>
-                      ))}
+                      <button
+                        className={`flex items-center w-full px-3 py-2 rounded-md transition-colors ${
+                          activeCategory === 'Все'
+                            ? 'bg-matrix-green/20 text-matrix-green border border-matrix-green/40'
+                            : 'bg-black/30 text-gray-300 border border-transparent hover:border-gray-700'
+                        }`}
+                        onClick={() => setActiveCategory('Все')}
+                      >
+                        Все
+                        {activeCategory === 'Все' && (
+                          <Check size={16} className="ml-auto" />
+                        )}
+                      </button>
+                      
+                      {hierarchicalCategories.map(category => 
+                        renderCategoryWithSubcategories(category)
+                      )}
                     </div>
                   </div>
                   

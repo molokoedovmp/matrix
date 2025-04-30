@@ -8,7 +8,8 @@ import {
   Plus, 
   Save, 
   X, 
-  Loader2
+  Loader2,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from '../../hooks/use-toast';
 import { ImageUpload } from '../../components/ui/image-upload';
@@ -20,6 +21,9 @@ interface Category {
   image_url?: string;
   created_at?: string;
   is_featured?: boolean;
+  parent_id?: number | null;
+  slug?: string;
+  subcategories?: Category[];
 }
 
 const AdminCategories = () => {
@@ -28,6 +32,9 @@ const AdminCategories = () => {
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Получаем только категории верхнего уровня (без родителя)
+  const topLevelCategories = categories?.filter(cat => !cat.parent_id) || [];
 
   // Функция для редактирования категории
   const handleEdit = (category: Category) => {
@@ -42,7 +49,9 @@ const AdminCategories = () => {
       name: '',
       description: '',
       image_url: '',
-      is_featured: false
+      is_featured: false,
+      parent_id: null,
+      slug: ''
     });
     setIsCreating(true);
     setIsEditing(true);
@@ -60,6 +69,20 @@ const AdminCategories = () => {
         variant: "destructive"
       });
       return;
+    }
+    
+    // Генерация slug, если он не указан
+    if (!editingCategory.slug) {
+      const slug = editingCategory.name
+        .toLowerCase()
+        .replace(/[^a-zа-я0-9]/gi, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      
+      setEditingCategory(prev => {
+        if (!prev) return prev;
+        return { ...prev, slug };
+      });
     }
     
     try {
@@ -111,7 +134,7 @@ const AdminCategories = () => {
 
   // Функция для удаления категории
   const handleDelete = async (id: number) => {
-    if (!confirm('Вы уверены, что хотите удалить эту категорию? Это также удалит все связанные продукты.')) return;
+    if (!confirm('Вы уверены, что хотите удалить эту категорию? Это также удалит все связанные продукты и подкатегории.')) return;
     
     try {
       await productService.deleteCategory(id);
@@ -138,7 +161,7 @@ const AdminCategories = () => {
   };
 
   // Функция для обновления полей редактируемой категории
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
     // Для чекбоксов обрабатываем отдельно
@@ -147,6 +170,13 @@ const AdminCategories = () => {
       setEditingCategory(prev => {
         if (!prev) return prev;
         return { ...prev, [name]: checked };
+      });
+    } else if (name === 'parent_id') {
+      // Для parent_id преобразуем строку в число или null
+      const parentId = value === '' ? null : parseInt(value, 10);
+      setEditingCategory(prev => {
+        if (!prev) return prev;
+        return { ...prev, [name]: parentId };
       });
     } else {
       setEditingCategory(prev => {
@@ -162,6 +192,77 @@ const AdminCategories = () => {
       if (!prev) return prev;
       return { ...prev, image_url: url };
     });
+  };
+
+  // Функция для получения отступа в зависимости от уровня вложенности
+  const getIndent = (category: Category) => {
+    if (!category.parent_id) return '';
+    return 'ml-6';
+  };
+
+  // Рекурсивная функция для отображения категорий и их подкатегорий
+  const renderCategoryRows = (categoryList: Category[], parentId: number | null = null) => {
+    const filteredCategories = categoryList.filter(cat => cat.parent_id === parentId);
+    
+    return filteredCategories.map(category => (
+      <React.Fragment key={category.id}>
+        <tr className="border-t border-gray-800 hover:bg-black/20">
+          <td className="px-4 py-3 text-gray-300">{category.id}</td>
+          <td className={`px-4 py-3 text-white flex items-center ${getIndent(category)}`}>
+            {category.parent_id && <ChevronRight size={16} className="text-gray-500 mr-2" />}
+            {category.name}
+          </td>
+          <td className="px-4 py-3">
+            {category.image_url ? (
+              <img 
+                src={category.image_url} 
+                alt={category.name} 
+                className="w-10 h-10 object-cover rounded"
+              />
+            ) : (
+              <span className="text-gray-500">-</span>
+            )}
+          </td>
+          <td className="px-4 py-3 text-gray-300">
+            {category.is_featured ? (
+              <span className="text-matrix-green">Да</span>
+            ) : (
+              <span className="text-gray-500">Нет</span>
+            )}
+          </td>
+          <td className="px-4 py-3 text-gray-300">
+            {category.parent_id ? (
+              <span className="text-gray-300">
+                {categories?.find(c => c.id === category.parent_id)?.name || '-'}
+              </span>
+            ) : (
+              <span className="text-gray-500">-</span>
+            )}
+          </td>
+          <td className="px-4 py-3">
+            <div className="flex space-x-2">
+              <button
+                onClick={() => handleEdit(category as Category)}
+                className="p-1 text-blue-400 hover:text-blue-300 transition-colors"
+                title="Редактировать"
+              >
+                <Pencil size={18} />
+              </button>
+              
+              <button
+                onClick={() => handleDelete(category.id)}
+                className="p-1 text-red-400 hover:text-red-300 transition-colors"
+                title="Удалить"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
+          </td>
+        </tr>
+        {/* Рекурсивно отображаем подкатегории */}
+        {renderCategoryRows(categoryList, category.id)}
+      </React.Fragment>
+    ));
   };
 
   return (
@@ -209,6 +310,38 @@ const AdminCategories = () => {
                   onChange={handleChange}
                   className="w-full bg-black/70 border border-gray-700 rounded-md px-3 py-2 text-white focus:border-matrix-green focus:outline-none"
                 />
+              </div>
+              
+              <div>
+                <label className="block text-gray-400 mb-2">Slug (URL)</label>
+                <input
+                  type="text"
+                  name="slug"
+                  value={editingCategory.slug || ''}
+                  onChange={handleChange}
+                  placeholder="например: iphone-14"
+                  className="w-full bg-black/70 border border-gray-700 rounded-md px-3 py-2 text-white focus:border-matrix-green focus:outline-none"
+                />
+                <p className="text-gray-500 text-xs mt-1">
+                  Оставьте пустым для автоматической генерации из названия
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-gray-400 mb-2">Родительская категория</label>
+                <select
+                  name="parent_id"
+                  value={editingCategory.parent_id === null ? '' : editingCategory.parent_id}
+                  onChange={handleChange}
+                  className="w-full bg-black/70 border border-gray-700 rounded-md px-3 py-2 text-white focus:border-matrix-green focus:outline-none"
+                >
+                  <option value="">Нет (категория верхнего уровня)</option>
+                  {categories?.filter(cat => cat.id !== editingCategory.id).map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               
               <div className="md:col-span-2">
@@ -283,57 +416,16 @@ const AdminCategories = () => {
                   <th className="px-4 py-3 text-left text-gray-400">Название</th>
                   <th className="px-4 py-3 text-left text-gray-400">Изображение</th>
                   <th className="px-4 py-3 text-left text-gray-400">На главной</th>
+                  <th className="px-4 py-3 text-left text-gray-400">Родитель</th>
                   <th className="px-4 py-3 text-left text-gray-400">Действия</th>
                 </tr>
               </thead>
               <tbody>
-                {categories?.map(category => (
-                  <tr key={category.id} className="border-t border-gray-800 hover:bg-black/20">
-                    <td className="px-4 py-3 text-gray-300">{category.id}</td>
-                    <td className="px-4 py-3 text-white">{category.name}</td>
-                    <td className="px-4 py-3">
-                      {category.image_url ? (
-                        <img 
-                          src={category.image_url} 
-                          alt={category.name} 
-                          className="w-10 h-10 object-cover rounded"
-                        />
-                      ) : (
-                        <span className="text-gray-500">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-gray-300">
-                      {category.is_featured ? (
-                        <span className="text-matrix-green">Да</span>
-                      ) : (
-                        <span className="text-gray-500">Нет</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleEdit(category as Category)}
-                          className="p-1 text-blue-400 hover:text-blue-300 transition-colors"
-                          title="Редактировать"
-                        >
-                          <Pencil size={18} />
-                        </button>
-                        
-                        <button
-                          onClick={() => handleDelete(category.id)}
-                          className="p-1 text-red-400 hover:text-red-300 transition-colors"
-                          title="Удалить"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                
-                {categories?.length === 0 && (
+                {categories && categories.length > 0 ? (
+                  renderCategoryRows(categories)
+                ) : (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                    <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                       Категории не найдены
                     </td>
                   </tr>

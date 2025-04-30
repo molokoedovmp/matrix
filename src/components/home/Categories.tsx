@@ -41,7 +41,7 @@ const Categories = () => {
             <div 
               key={category.id}
               className="relative h-80 group cursor-pointer overflow-hidden rounded-lg border border-white/10 hover:border-matrix-green/50 transition-all duration-300"
-              onClick={() => navigate(`/catalog?category=${category.slug}`)}
+              onClick={() => navigate(category.slug ? `/catalog?category=${category.slug}` : '/catalog')}
             >
               <img 
                 src={category.image_url} 

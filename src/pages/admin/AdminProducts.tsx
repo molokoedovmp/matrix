@@ -65,6 +65,10 @@ const AdminProducts = () => {
   // Состояние для спецификаций
   const [specs, setSpecs] = useState<{key: string, value: string}[]>([]);
   
+  // Добавьте новое состояние для поиска категорий
+  const [categorySearchTerm, setCategorySearchTerm] = useState('');
+  const [filteredCategories, setFilteredCategories] = useState<any[]>([]);
+  
   useEffect(() => {
     if (products) {
       setFilteredProducts(
@@ -76,6 +80,22 @@ const AdminProducts = () => {
       );
     }
   }, [products, searchTerm]);
+  
+  // Добавьте эффект для фильтрации категорий при поиске
+  useEffect(() => {
+    if (categories) {
+      if (categorySearchTerm.trim() === '') {
+        setFilteredCategories(categories);
+      } else {
+        const searchLower = categorySearchTerm.toLowerCase();
+        setFilteredCategories(
+          categories.filter(cat => 
+            cat.name.toLowerCase().includes(searchLower)
+          )
+        );
+      }
+    }
+  }, [categories, categorySearchTerm]);
   
   // Функция для открытия диалога создания нового продукта
   const handleCreate = () => {
@@ -397,7 +417,7 @@ const AdminProducts = () => {
         return acc;
       }, {} as Record<string, string>);
       
-      // Подготавливаем данные для сохранения
+      // Подготавливаем данные для сохраненияJn
       const productData = {
         ...productForm,
         image_url: imageUrls.mainImageUrl,
@@ -601,17 +621,52 @@ const AdminProducts = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Категория *</label>
-                <select
-                  name="category_id"
-                  value={productForm.category_id}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full bg-black/30 border border-gray-700 rounded-md px-3 py-2 text-white focus:outline-none focus:border-matrix-green"
-                >
-                  {categories?.map(category => (
-                    <option key={category.id} value={category.id}>{category.name}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <div className="flex items-center mb-2">
+                    <input
+                      type="text"
+                      placeholder="Поиск категории..."
+                      value={categorySearchTerm}
+                      onChange={(e) => setCategorySearchTerm(e.target.value)}
+                      className="w-full bg-black/30 border border-gray-700 rounded-md px-3 py-2 text-white focus:outline-none focus:border-matrix-green"
+                    />
+                    {categorySearchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setCategorySearchTerm('')}
+                        className="absolute right-2 text-gray-500 hover:text-gray-300"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="max-h-60 overflow-y-auto bg-black/30 border border-gray-700 rounded-md">
+                    {filteredCategories.length > 0 ? (
+                      filteredCategories.map(category => (
+                        <div 
+                          key={category.id}
+                          className={`px-3 py-2 cursor-pointer hover:bg-matrix-green/10 ${
+                            productForm.category_id === category.id ? 'bg-matrix-green/20 text-matrix-green' : 'text-gray-300'
+                          }`}
+                          onClick={() => setProductForm(prev => ({ ...prev, category_id: category.id }))}
+                        >
+                          <div className="flex items-center">
+                            {category.parent_id && <span className="ml-2 mr-2">↳</span>}
+                            <span>{category.name}</span>
+                            {productForm.category_id === category.id && (
+                              <Check size={16} className="ml-auto" />
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2 text-gray-500 text-center">
+                        {categorySearchTerm ? 'Категории не найдены' : 'Нет доступных категорий'}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               
               <div>
