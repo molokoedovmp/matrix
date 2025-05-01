@@ -251,6 +251,13 @@ const Navbar = () => {
     };
   }, [isMenuOpen]);
 
+  // Найдите функцию для закрытия меню
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+    // Сбрасываем раскрытые категории
+    setExpandedCategories([]);
+  };
+
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -487,7 +494,7 @@ const Navbar = () => {
           <div className="p-5 border-b border-matrix-green/30 flex justify-between items-center">
             <span className="text-xl font-bold text-matrix-green">Меню</span>
             <button 
-              onClick={() => setIsMenuOpen(false)}
+              onClick={closeMenu}
               className="text-gray-400 hover:text-matrix-green p-1"
             >
               <X size={24} />
@@ -565,7 +572,7 @@ const Navbar = () => {
               <Link 
                 to="/" 
                 className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
-                onClick={() => setIsMenuOpen(false)}
+                onClick={closeMenu}
               >
                 ГЛΛВНΛЯ
               </Link>
@@ -574,7 +581,7 @@ const Navbar = () => {
                 <Link
                   to="/catalog"
                   className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={closeMenu}
                 >
                   КΛТΛЛОГ
                 </Link>
@@ -593,7 +600,7 @@ const Navbar = () => {
               <Link 
                 to="/about" 
                 className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
-                onClick={() => setIsMenuOpen(false)}
+                onClick={closeMenu}
               >
                 О НΛС
               </Link>
@@ -601,7 +608,7 @@ const Navbar = () => {
               <Link 
                 to="/contacts" 
                 className="block text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-base uppercase"
-                onClick={() => setIsMenuOpen(false)}
+                onClick={closeMenu}
               >
                 КОНТΛКТЫ
               </Link>
@@ -614,7 +621,7 @@ const Navbar = () => {
       {isMenuOpen && (
         <div 
           className="fixed inset-0 bg-black/70 z-[9998] md:hidden"
-          onClick={() => setIsMenuOpen(false)}
+          onClick={closeMenu}
         ></div>
       )}
     </header>
