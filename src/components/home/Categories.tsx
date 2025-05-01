@@ -1,62 +1,76 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useCategories } from '../../hooks/useCategories';
+import { useNavbar } from '../../context/NavbarContext';
+
+// Расширяем интерфейс Category, добавляя parent_id
+interface CategoryWithParent {
+  id: number;
+  name: string;
+  slug?: string;
+  parent_id: number | null;
+  is_featured?: boolean;
+  image_url?: string;
+  order: number;
+}
 
 const Categories = () => {
-  const { data: allCategories, isLoading, error } = useCategories();
-  const navigate = useNavigate();
+  const { data: categories, isLoading } = useCategories();
+  const { openCategoryMenu } = useNavbar();
   
-  // Фильтрация категорий, оставляем только с is_featured=true
-  const categories = allCategories?.filter(category => category.is_featured) || [];
-  
-  console.log('Отображаемые категории в компоненте Categories:', categories);
+  // Функция для обработки клика по категории
+  const handleCategoryClick = (categoryId: number, e: React.MouseEvent) => {
+    e.preventDefault(); // Предотвращаем переход по ссылке
+    openCategoryMenu(categoryId);
+    
+    // Прокручиваем страницу вверх, чтобы пользователь увидел открытое меню
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   
   if (isLoading) {
-    return (
-      <div className="py-12 text-center">
-        <div className="animate-pulse text-gray-400">Загрузка категорий...</div>
-      </div>
-    );
+    return <div className="text-center py-10">Загрузка категорий...</div>;
   }
   
-  if (error || !categories || categories.length === 0) {
-    console.error('Ошибка загрузки категорий или нет избранных категорий:', error);
-    return (
-      <div className="py-12 text-center">
-        <div className="text-red-500">Не удалось загрузить категории</div>
-      </div>
-    );
-  }
+  // Фильтруем только категории верхнего уровня и сортируем по порядку
+  const rootCategories = categories
+    ?.filter(cat => (cat as CategoryWithParent).parent_id === null)
+    .sort((a, b) => (a.order || 0) - (b.order || 0)) || [];
   
   return (
-    <section className="py-20 bg-black">
+    <section className="py-24 bg-black mt-8">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl md:text-4xl font-bold mb-2 text-white">
+        <h2 className="text-3xl font-bold text-white mb-12 text-center">
           Каталог <span className="text-matrix-green">устройств</span>
         </h2>
-        <p className="text-gray-400 mb-12">Выберите категорию продуктов</p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {categories.map((category) => (
-            <div 
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {rootCategories.map(category => (
+            <Link 
               key={category.id}
-              className="relative h-80 group cursor-pointer overflow-hidden rounded-lg border border-white/10 hover:border-matrix-green/50 transition-all duration-300"
-              onClick={() => navigate(category.slug ? `/catalog?category=${category.slug}` : '/catalog')}
+              to={`/catalog?category=${category.slug}`}
+              className="group"
+              onClick={(e) => handleCategoryClick(category.id, e)}
             >
-              <img 
-                src={category.image_url} 
-                alt={category.name}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-              
-              <div className="absolute bottom-0 left-0 w-full p-6">
-                <h3 className="text-2xl font-bold text-white group-hover:text-matrix-green transition-colors duration-300">
-                  {category.name}
-                </h3>
-                <div className="w-0 h-0.5 bg-matrix-green transition-all duration-500 group-hover:w-full"></div>
+              <div className="bg-black/50 border border-matrix-green/30 rounded-lg overflow-hidden transition-all duration-300 hover:border-matrix-green hover:shadow-lg hover:shadow-matrix-green/20">
+                <div className="aspect-square relative overflow-hidden">
+                  {category.image_url ? (
+                    <img 
+                      src={category.image_url} 
+                      alt={category.name} 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-matrix-green/10">
+                      <span className="text-matrix-green text-5xl">?</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                </div>
+                <div className="p-4">
+                  <h3 className="text-xl font-medium text-matrix-green">{category.name}</h3>
+                </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

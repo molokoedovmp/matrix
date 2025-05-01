@@ -10,6 +10,8 @@ export interface Category {
   color?: string;
   is_featured?: boolean;
   sort_order?: number;
+  parent_id?: number | null;
+  order: number;
 }
 
 export interface Product {
@@ -524,5 +526,40 @@ export const productService = {
       category_name: '',
       tags: []
     }));
+  },
+  
+  // Добавьте метод для обновления порядка категорий
+  async updateCategoryOrder(categoryId: number, newOrder: number) {
+    const { data, error } = await supabase
+      .from('categories')
+      .update({ order: newOrder })
+      .eq('id', categoryId);
+      
+    if (error) {
+      console.error('Ошибка при обновлении порядка категории:', error);
+      throw error;
+    }
+    
+    return data;
+  },
+  
+  // Добавьте метод для обновления порядка нескольких категорий
+  async updateCategoriesOrder(updates: { id: number, order: number }[]) {
+    const promises = updates.map(update => 
+      supabase
+        .from('categories')
+        .update({ order: update.order })
+        .eq('id', update.id)
+    );
+    
+    const results = await Promise.all(promises);
+    const errors = results.filter(result => result.error);
+    
+    if (errors.length > 0) {
+      console.error('Ошибки при обновлении порядка категорий:', errors);
+      throw errors[0].error;
+    }
+    
+    return true;
   }
 }; 

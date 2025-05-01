@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import { useCategories } from '../../hooks/useProducts';
+import { useCategories } from '../../hooks/useCategories';
 import { productService } from '../../services/productService';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { toast } from '../../hooks/use-toast';
 import { 
   Pencil, 
   Trash2, 
   Plus, 
   Save, 
   X, 
-  Loader2,
+  GripVertical,
+  ArrowUp,
+  ArrowDown,
+  ChevronDown,
   ChevronRight
 } from 'lucide-react';
-import { toast } from '../../hooks/use-toast';
 import { ImageUpload } from '../../components/ui/image-upload';
 
 interface Category {
@@ -24,6 +28,7 @@ interface Category {
   parent_id?: number | null;
   slug?: string;
   subcategories?: Category[];
+  order: number;
 }
 
 const AdminCategories = () => {
@@ -32,9 +37,60 @@ const AdminCategories = () => {
   const [editingCategory, setEditingCategory] = useState<Partial<Category> | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<number[]>([]);
 
   // Получаем только категории верхнего уровня (без родителя)
   const topLevelCategories = categories?.filter(cat => !cat.parent_id) || [];
+
+  // Добавьте функцию для организации категорий в иерархическую структуру
+  const organizeCategories = (categories: Category[] = []): Category[] => {
+    const categoryMap = new Map<number, Category>();
+    const rootCategories: Category[] = [];
+    
+    // Сначала создаем объекты для всех категорий
+    categories.forEach(category => {
+      categoryMap.set(category.id, { ...category, subcategories: [] });
+    });
+    
+    // Затем организуем их в дерево
+    categories.forEach(category => {
+      const categoryWithSubs = categoryMap.get(category.id);
+      if (!categoryWithSubs) return;
+      
+      if (category.parent_id === null || category.parent_id === undefined) {
+        rootCategories.push(categoryWithSubs);
+      } else {
+        const parentCategory = categoryMap.get(category.parent_id);
+        if (parentCategory) {
+          if (!parentCategory.subcategories) {
+            parentCategory.subcategories = [];
+          }
+          parentCategory.subcategories.push(categoryWithSubs);
+        }
+      }
+    });
+    
+    // Сортируем корневые категории и подкатегории по порядку
+    rootCategories.sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    // Сортируем подкатегории
+    rootCategories.forEach(category => {
+      if (category.subcategories && category.subcategories.length > 0) {
+        category.subcategories.sort((a, b) => (a.order || 0) - (b.order || 0));
+      }
+    });
+    
+    return rootCategories;
+  };
+
+  // Обновите useEffect для организации категорий
+  useEffect(() => {
+    if (categories) {
+      const hierarchicalCategories = organizeCategories(categories);
+      setFilteredCategories(hierarchicalCategories);
+    }
+  }, [categories]);
 
   // Функция для редактирования категории
   const handleEdit = (category: Category) => {
@@ -51,7 +107,8 @@ const AdminCategories = () => {
       image_url: '',
       is_featured: false,
       parent_id: null,
-      slug: ''
+      slug: '',
+      order: 0
     });
     setIsCreating(true);
     setIsEditing(true);
@@ -200,69 +257,166 @@ const AdminCategories = () => {
     return 'ml-6';
   };
 
-  // Рекурсивная функция для отображения категорий и их подкатегорий
-  const renderCategoryRows = (categoryList: Category[], parentId: number | null = null) => {
-    const filteredCategories = categoryList.filter(cat => cat.parent_id === parentId);
+  // Добавьте функцию для преобразования иерархической структуры в плоский список
+  const flattenCategories = (categories: Category[], result: Category[] = [], level = 0): Category[] => {
+    categories.forEach((category, index) => {
+      result.push({ ...category, order: result.length });
+      
+      if (category.subcategories && category.subcategories.length > 0) {
+        flattenCategories(category.subcategories, result, level + 1);
+      }
+    });
     
-    return filteredCategories.map(category => (
-      <React.Fragment key={category.id}>
-        <tr className="border-t border-gray-800 hover:bg-black/20">
-          <td className="px-4 py-3 text-gray-300">{category.id}</td>
-          <td className={`px-4 py-3 text-white flex items-center ${getIndent(category)}`}>
-            {category.parent_id && <ChevronRight size={16} className="text-gray-500 mr-2" />}
-            {category.name}
-          </td>
-          <td className="px-4 py-3">
-            {category.image_url ? (
-              <img 
-                src={category.image_url} 
-                alt={category.name} 
-                className="w-10 h-10 object-cover rounded"
-              />
-            ) : (
-              <span className="text-gray-500">-</span>
-            )}
-          </td>
-          <td className="px-4 py-3 text-gray-300">
-            {category.is_featured ? (
-              <span className="text-matrix-green">Да</span>
-            ) : (
-              <span className="text-gray-500">Нет</span>
-            )}
-          </td>
-          <td className="px-4 py-3 text-gray-300">
-            {category.parent_id ? (
-              <span className="text-gray-300">
-                {categories?.find(c => c.id === category.parent_id)?.name || '-'}
-              </span>
-            ) : (
-              <span className="text-gray-500">-</span>
-            )}
-          </td>
-          <td className="px-4 py-3">
-            <div className="flex space-x-2">
-              <button
-                onClick={() => handleEdit(category as Category)}
-                className="p-1 text-blue-400 hover:text-blue-300 transition-colors"
-                title="Редактировать"
-              >
-                <Pencil size={18} />
-              </button>
-              
-              <button
-                onClick={() => handleDelete(category.id)}
-                className="p-1 text-red-400 hover:text-red-300 transition-colors"
-                title="Удалить"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          </td>
-        </tr>
-        {/* Рекурсивно отображаем подкатегории */}
-        {renderCategoryRows(categoryList, category.id)}
-      </React.Fragment>
-    ));
+    return result;
+  };
+
+  // Обновите функцию moveCategory
+  const moveCategory = async (path: number[], direction: 'up' | 'down') => {
+    // Для простоты сначала обрабатываем только категории верхнего уровня
+    const index = path[0];
+    
+    if (
+      (direction === 'up' && index === 0) || 
+      (direction === 'down' && index === filteredCategories.length - 1)
+    ) {
+      return;
+    }
+    
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    const items = Array.from(filteredCategories);
+    const [movedItem] = items.splice(index, 1);
+    items.splice(newIndex, 0, movedItem);
+    
+    // Обновляем порядок в UI
+    setFilteredCategories(items);
+    
+    // Преобразуем иерархическую структуру в плоский список для обновления
+    const flattenedCategories = flattenCategories(items);
+    
+    // Обновляем порядок в базе данных
+    try {
+      const updates = flattenedCategories.map((item, idx) => ({
+        id: item.id,
+        order: idx
+      }));
+      
+      await productService.updateCategoriesOrder(updates);
+      toast({
+        title: "Порядок категорий обновлен",
+        description: "Изменения успешно сохранены",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Ошибка при обновлении порядка:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить порядок категорий",
+        variant: "destructive"
+      });
+      // Восстанавливаем предыдущий порядок
+      refetch();
+    }
+  };
+
+  // Исправленная функция handleDragEnd
+  const handleDragEnd = async (result: any) => {
+    // Добавим отладочную информацию
+    console.log("DragEnd result:", result);
+    
+    if (!result.destination) return;
+    
+    try {
+      // Проверяем, является ли это перемещением подкатегории
+      if (result.source.droppableId.startsWith('subcategories-')) {
+        // Получаем ID родительской категории
+        const parentId = parseInt(result.source.droppableId.split('-')[1]);
+        
+        // Находим родительскую категорию
+        const newCategories = [...filteredCategories];
+        const parentIndex = newCategories.findIndex(cat => cat.id === parentId);
+        
+        if (parentIndex !== -1 && newCategories[parentIndex].subcategories) {
+          // Перемещаем элемент внутри подкатегорий
+          const subcategories = [...newCategories[parentIndex].subcategories!];
+          const [movedItem] = subcategories.splice(result.source.index, 1);
+          subcategories.splice(result.destination.index, 0, movedItem);
+          
+          // Присваиваем порядковые номера
+          const updatedSubcategories = subcategories.map((subcat, idx) => ({
+            ...subcat,
+            order: idx * 10
+          }));
+          
+          // Обновляем состояние
+          newCategories[parentIndex].subcategories = updatedSubcategories;
+          setFilteredCategories([...newCategories]);
+          
+          // Обновляем порядок в базе данных
+          const updates = updatedSubcategories.map(item => ({
+            id: item.id,
+            order: item.order
+          }));
+          
+          console.log("Обновление порядка подкатегорий:", updates);
+          await productService.updateCategoriesOrder(updates);
+          
+          toast({
+            title: "Порядок подкатегорий обновлен",
+            description: "Изменения успешно сохранены",
+            variant: "default"
+          });
+        }
+      } else {
+        // Перемещение основных категорий
+        const newCategories = [...filteredCategories];
+        const [reorderedItem] = newCategories.splice(result.source.index, 1);
+        newCategories.splice(result.destination.index, 0, reorderedItem);
+        
+        // Обновляем порядок категорий
+        const updatedCategories = newCategories.map((cat, idx) => ({
+          ...cat,
+          order: idx * 10
+        }));
+        
+        // Обновляем UI
+        setFilteredCategories(updatedCategories);
+        
+        // Обновляем порядок в базе данных
+        const updates = updatedCategories.map(item => ({
+          id: item.id,
+          order: item.order
+        }));
+        
+        console.log("Обновление порядка категорий:", updates);
+        await productService.updateCategoriesOrder(updates);
+        
+        toast({
+          title: "Порядок категорий обновлен",
+          description: "Изменения успешно сохранены",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Ошибка при обновлении порядка категорий:', error);
+      
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить порядок категорий",
+        variant: "destructive"
+      });
+      
+      // Перезагружаем данные в случае ошибки
+      refetch();
+    }
+  };
+
+  // Функция для раскрытия/закрытия подкатегорий
+  const toggleCategoryExpand = (id: number) => {
+    if (expandedCategories.includes(id)) {
+      setExpandedCategories(expandedCategories.filter(i => i !== id));
+    } else {
+      setExpandedCategories([...expandedCategories, id]);
+    }
   };
 
   return (
@@ -284,7 +438,7 @@ const AdminCategories = () => {
         
         {isLoading && (
           <div className="flex justify-center py-8">
-            <Loader2 size={32} className="animate-spin text-matrix-green" />
+            <div className="animate-spin w-8 h-8 border-2 border-matrix-green border-t-transparent rounded-full mx-auto mb-4"></div>
           </div>
         )}
         
@@ -397,7 +551,7 @@ const AdminCategories = () => {
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
-                  <Loader2 size={18} className="mr-2 animate-spin" />
+                  <div className="animate-spin w-4 h-4 mr-2"></div>
                 ) : (
                   <Save size={18} className="mr-2" />
                 )}
@@ -407,32 +561,161 @@ const AdminCategories = () => {
           </div>
         )}
         
-        <div className="bg-black/30 rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-black/50">
-                  <th className="px-4 py-3 text-left text-gray-400">ID</th>
-                  <th className="px-4 py-3 text-left text-gray-400">Название</th>
-                  <th className="px-4 py-3 text-left text-gray-400">Изображение</th>
-                  <th className="px-4 py-3 text-left text-gray-400">На главной</th>
-                  <th className="px-4 py-3 text-left text-gray-400">Родитель</th>
-                  <th className="px-4 py-3 text-left text-gray-400">Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories && categories.length > 0 ? (
-                  renderCategoryRows(categories)
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
-                      Категории не найдены
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+        <div className="bg-black/30 border border-gray-700 rounded-md p-4 mt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-white">Список категорий</h2>
+            <div className="flex space-x-2">
+            </div>
           </div>
+          
+          {isLoading ? (
+            <div className="text-center py-10">
+              <div className="animate-spin w-8 h-8 border-2 border-matrix-green border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-gray-400">Загрузка категорий...</p>
+            </div>
+          ) : filteredCategories.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-gray-400">Категории не найдены</p>
+            </div>
+          ) : (
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="categories">
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="space-y-2"
+                  >
+                    {filteredCategories.map((category, index) => (
+                      <React.Fragment key={category.id}>
+                        <Draggable 
+                          draggableId={category.id.toString()} 
+                          index={index}
+                        >
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className="bg-black/50 border border-gray-700 rounded-md p-3 flex items-center justify-between"
+                            >
+                              <div className="flex items-center">
+                                <div 
+                                  {...provided.dragHandleProps}
+                                  className="mr-3 cursor-grab text-gray-500 hover:text-gray-300"
+                                >
+                                  <GripVertical size={20} />
+                                </div>
+                                
+                                {category.subcategories && category.subcategories.length > 0 && (
+                                  <button
+                                    onClick={() => toggleCategoryExpand(category.id)}
+                                    className="mr-2 text-gray-400 hover:text-matrix-green"
+                                  >
+                                    {expandedCategories.includes(category.id) ? (
+                                      <ChevronDown size={18} />
+                                    ) : (
+                                      <ChevronRight size={18} />
+                                    )}
+                                  </button>
+                                )}
+                                
+                                <div>
+                                  <h3 className="text-white font-medium">{category.name}</h3>
+                                  <p className="text-gray-400 text-sm">
+                                    {category.parent_id ? 'Подкатегория' : 'Основная категория'}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => handleEdit(category)}
+                                  className="p-2 text-blue-400 hover:bg-blue-900/30 rounded-md"
+                                  title="Редактировать"
+                                >
+                                  <Pencil size={18} />
+                                </button>
+                                
+                                <button
+                                  onClick={() => handleDelete(category.id)}
+                                  className="p-2 text-red-400 hover:bg-red-900/30 rounded-md"
+                                  title="Удалить"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                        
+                        {/* Отображаем подкатегории, если категория раскрыта */}
+                        {expandedCategories.includes(category.id) && category.subcategories && category.subcategories.length > 0 && (
+                          <Droppable droppableId={`subcategories-${category.id}`}>
+                            {(provided) => (
+                              <div
+                                {...provided.droppableProps}
+                                ref={provided.innerRef}
+                                className="ml-8 mt-2 space-y-2 border-l-2 border-gray-700 pl-4"
+                              >
+                                {category.subcategories.map((subcategory, subIndex) => (
+                                  <Draggable
+                                    key={subcategory.id}
+                                    draggableId={subcategory.id.toString()}
+                                    index={subIndex}
+                                  >
+                                    {(provided) => (
+                                      <div
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        className="bg-black/30 border border-gray-700 rounded-md p-3 flex items-center justify-between"
+                                      >
+                                        <div className="flex items-center">
+                                          <div
+                                            {...provided.dragHandleProps}
+                                            className="mr-3 cursor-grab text-gray-500 hover:text-gray-300"
+                                          >
+                                            <GripVertical size={20} />
+                                          </div>
+                                          <div>
+                                            <h3 className="text-white font-medium">{subcategory.name}</h3>
+                                            <p className="text-gray-400 text-sm">Подкатегория</p>
+                                          </div>
+                                        </div>
+                                        
+                                        <div className="flex items-center space-x-2">
+                                          <button
+                                            onClick={() => handleEdit(subcategory)}
+                                            className="p-2 text-blue-400 hover:bg-blue-900/30 rounded-md"
+                                            title="Редактировать"
+                                          >
+                                            <Pencil size={18} />
+                                          </button>
+                                          
+                                          <button
+                                            onClick={() => handleDelete(subcategory.id)}
+                                            className="p-2 text-red-400 hover:bg-red-900/30 rounded-md"
+                                            title="Удалить"
+                                          >
+                                            <Trash2 size={18} />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        )}
+                      </React.Fragment>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          )}
         </div>
       </div>
     </AdminLayout>

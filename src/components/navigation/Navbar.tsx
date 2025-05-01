@@ -4,6 +4,7 @@ import { Search, ShoppingCart, Menu, X, ChevronRight, ChevronDown, ChevronUp } f
 import { useCategories } from '../../hooks/useCategories';
 import { useCart } from '../../hooks/useCart';
 import { useProducts } from '../../hooks/useProducts';
+import { useNavbar } from '../../context/NavbarContext';
 
 interface Category {
   id: number;
@@ -12,6 +13,7 @@ interface Category {
   parent_id?: number | null;
   is_featured?: boolean;
   image_url?: string;
+  order: number;
 }
 
 interface CategoryWithSubcategories extends Category {
@@ -19,17 +21,24 @@ interface CategoryWithSubcategories extends Category {
 }
 
 const Navbar = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [expandedCategories, setExpandedCategories] = useState<number[]>([]);
-  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
-  const [hoveredCategory, setHoveredCategory] = useState<number | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const catalogRef = useRef<HTMLDivElement>(null);
+  
+  const { 
+    isCatalogOpen, 
+    setIsCatalogOpen, 
+    hoveredCategory, 
+    setHoveredCategory,
+    expandedCategories,
+    setExpandedCategories,
+    isMenuOpen,
+    setIsMenuOpen
+  } = useNavbar();
   
   const navigate = useNavigate();
   const { data: allCategories, isLoading: isLoadingCategories } = useCategories();
@@ -40,7 +49,7 @@ const Navbar = () => {
   // Эффект для анимации букв в логотипе
   const [logoText, setLogoText] = useState("MΛTR1X");
   
-  // Организуем категории в иерархическую структуру
+  // Организуем категории в иерархическую структуру с учетом порядка
   const organizeCategories = (categories: Category[] = []): CategoryWithSubcategories[] => {
     const categoryMap = new Map<number, CategoryWithSubcategories>();
     const rootCategories: CategoryWithSubcategories[] = [];
@@ -65,6 +74,16 @@ const Navbar = () => {
           }
           parentCategory.subcategories.push(categoryWithSubs);
         }
+      }
+    });
+    
+    // Сортируем корневые категории и подкатегории по порядку
+    rootCategories.sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    // Сортируем подкатегории
+    rootCategories.forEach(category => {
+      if (category.subcategories && category.subcategories.length > 0) {
+        category.subcategories.sort((a, b) => (a.order || 0) - (b.order || 0));
       }
     });
     
@@ -174,7 +193,7 @@ const Navbar = () => {
   
   // Функция для переключения раскрытия категории
   const toggleCategoryExpand = (categoryId: number) => {
-    setExpandedCategories(prev => {
+    setExpandedCategories((prev: number[]) => {
       if (prev.includes(categoryId)) {
         return prev.filter(id => id !== categoryId);
       } else {
@@ -353,12 +372,7 @@ const Navbar = () => {
               О НΛС
             </Link>
             
-            <Link 
-              to="/contacts" 
-              className="text-gray-300 hover:text-matrix-green transition-colors duration-300 font-['Courier_New'] tracking-widest text-sm uppercase"
-            >
-              КОНТΛКТЫ
-            </Link>
+            
           </nav>
 
           {/* Поиск и корзина */}
