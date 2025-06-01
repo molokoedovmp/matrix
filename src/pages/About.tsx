@@ -10,7 +10,8 @@ import {
   Layers, 
   Lightbulb, 
   ShieldCheck, 
-  Users 
+  Users, 
+  Phone 
 } from 'lucide-react';
 
 const About = () => {
@@ -137,7 +138,7 @@ const About = () => {
                     alt="Наша миссия" 
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t из-чёрного/70 через-прозрачный к-прозрачному"></div>
                   
                   {/* Декоративные элементы */}
                   <div className="absolute bottom-0 left-0 w-full p-6">
@@ -209,7 +210,7 @@ const About = () => {
             <h2 className="text-3xl font-bold text-white mb-2">
               Связь с нами <span className="text-matrix-green">в соцсетях</span>
             </h2>
-            <p className="text-gray-400 mb-12">Свяжитесь с нами в социальных сетях</p>
+            <p className="text-gray-400 mb-12">Свяжитесь с нами в социальных сетях или по телефону</p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {/* Telegram */}
@@ -241,6 +242,18 @@ const About = () => {
                   </svg>
                 </div>
                 <h3 className="text-xl font-bold text-white text-center mb-2">WhatsApp</h3>
+                <p className="text-gray-400 text-center">+7 (901) 735-33-35</p>
+              </a>
+
+              {/* Телефон */}
+              <a 
+                href="tel:+79017353335"
+                className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-lg p-6 hover:border-matrix-green/50 transition-all duration-300 hover:transform hover:scale-105"
+              >
+                <div className="w-16 h-16 bg-gray-500/20 rounded-full flex items-center justify-center mb-4 mx-auto">
+                  <Phone className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white text-center mb-2">Телефон</h3>
                 <p className="text-gray-400 text-center">+7 (901) 735-33-35</p>
               </a>
             </div>
